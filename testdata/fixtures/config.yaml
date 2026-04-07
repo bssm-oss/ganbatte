@@ -1,0 +1,34 @@
+# Test configuration for ganbatte
+version: "0.1.0"
+global_scope: true
+
+alias:
+  gs:
+    cmd: "git status -sb"
+  ll:
+    cmd: "ls -la"
+
+workflow:
+  deploy:
+    description: "Deploy application"
+    params:
+      - env
+      - version
+    steps:
+      - run: "echo \"Linting code\""
+      - run: "echo \"Running tests\""
+        on_fail: stop
+      - run: "echo \"Building version {version} for {env}\""
+      - run: "echo \"Deploying to {env}\""
+        confirm: true
+    tags:
+      - deploy
+      - ci
+  test:
+    description: "Run test suite"
+    steps:
+      - run: "go test ./unit"
+      - run: "go test ./integration"
+        on_fail: continue
+    tags:
+      - test
