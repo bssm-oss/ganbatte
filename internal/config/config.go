@@ -36,6 +36,12 @@ type Step struct {
 	Confirm bool   `mapstructure:"confirm"`
 }
 
+// LoadMeta contains metadata about the loaded configuration.
+type LoadMeta struct {
+	FilePath string // absolute path to the loaded config file
+	Format   string // "toml", "yaml", or "json"
+}
+
 // NewViper returns a new viper instance with default configuration
 func NewViper() *viper.Viper {
 	return viper.New()
@@ -95,6 +101,93 @@ func Load() (*Config, error) {
 	}
 
 	return &cfg, nil
+}
+
+// LoadWithMeta loads config and returns metadata about the loaded file.
+func LoadWithMeta() (*Config, *LoadMeta, error) {
+	v := viper.New()
+	v.AutomaticEnv()
+	v.SetConfigName("config")
+
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return nil, nil, fmt.Errorf("getting home directory: %w", err)
+	}
+	globalConfigPath := filepath.Join(home, ".config", "ganbatte")
+	v.AddConfigPath(globalConfigPath)
+	v.AddConfigPath(".")
+
+	if err := v.ReadInConfig(); err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+			return &Config{
+				Version:   "0.1.0",
+				Global:    true,
+				Aliases:   make(map[string]Alias),
+				Workflows: make(map[string]Workflow),
+			}, nil, nil
+		}
+		return nil, nil, fmt.Errorf("reading config: %w", err)
+	}
+
+	var cfg Config
+	if err := v.Unmarshal(&cfg); err != nil {
+		return nil, nil, fmt.Errorf("unmarshaling config: %w", err)
+	}
+
+	if cfg.Version == "" {
+		cfg.Version = "0.1.0"
+	}
+	if cfg.Aliases == nil {
+		cfg.Aliases = make(map[string]Alias)
+	}
+	if cfg.Workflows == nil {
+		cfg.Workflows = make(map[string]Workflow)
+	}
+
+	filePath := v.ConfigFileUsed()
+	format := ""
+	switch {
+	case filepath.Ext(filePath) == ".toml":
+		format = "toml"
+	case filepath.Ext(filePath) == ".yaml" || filepath.Ext(filePath) == ".yml":
+		format = "yaml"
+	case filepath.Ext(filePath) == ".json":
+		format = "json"
+	}
+
+	meta := &LoadMeta{
+		FilePath: filePath,
+		Format:   format,
+	}
+
+	return &cfg, meta, nil
+}
+
+// SaveGlobal 글로벌 설정 파일에 강제로 저장합니다.
+func (c *Config) SaveGlobal() error {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return fmt.Errorf("getting home directory: %w", err)
+	}
+
+	configDir := filepath.Join(home, ".config", "ganbatte")
+	if err := os.MkdirAll(configDir, 0755); err != nil {
+		return fmt.Errorf("creating config directory: %w", err)
+	}
+
+	v := viper.New()
+	configFile := filepath.Join(configDir, "config.toml")
+	v.SetConfigType("toml")
+	v.SetConfigFile(configFile)
+	v.Set("version", c.Version)
+	v.Set("global_scope", c.Global)
+	v.Set("alias", c.Aliases)
+	v.Set("workflow", c.Workflows)
+
+	if err := v.WriteConfig(); err != nil {
+		return fmt.Errorf("writing config: %w", err)
+	}
+	return nil
 }
 
 // Save 설정 파일을 저장합니다.

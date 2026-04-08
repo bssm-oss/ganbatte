@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/bssm-oss/ganbatte/internal/config"
 	"github.com/spf13/cobra"
@@ -14,37 +13,47 @@ var editCmd = &cobra.Command{
 	Short: "Edit an existing alias",
 	Long: `Edit an existing alias in the configuration.
 Example:
-  gnb edit gs "git status --short --branch"`,
+  gnb edit gs "git status --short --branch"
+  gnb edit --global gs "git status"`,
 	Args: cobra.MinimumNArgs(2),
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		name := args[0]
 		command := args[1]
+		global, _ := cmd.Flags().GetBool("global")
 
 		cfg, err := config.Load()
 		if err != nil {
-			fmt.Printf("Error loading config: %v\n", err)
-			os.Exit(1)
+			return fmt.Errorf("loading config: %w", err)
 		}
 
-		// Check if alias exists
 		if _, exists := cfg.Aliases[name]; !exists {
-			fmt.Printf("Alias '%s' not found. Use 'gnb add %s <command>' to create it.\n", name, name)
-			os.Exit(1)
+			return fmt.Errorf("alias '%s' not found. Use 'gnb add %s <command>' to create it", name, name)
 		}
 
 		cfg.Aliases[name] = config.Alias{
 			Cmd: command,
 		}
 
-		if err := cfg.Save(); err != nil {
-			fmt.Printf("Error saving config: %v\n", err)
-			os.Exit(1)
+		if global {
+			if err := cfg.SaveGlobal(); err != nil {
+				return fmt.Errorf("saving global config: %w", err)
+			}
+		} else {
+			if err := cfg.Save(); err != nil {
+				return fmt.Errorf("saving config: %w", err)
+			}
 		}
 
-		fmt.Printf("Updated alias '%s' = %s\n", name, command)
+		scope := ""
+		if global {
+			scope = " (global)"
+		}
+		cmd.Printf("Updated alias '%s' = %s%s\n", name, command, scope)
+		return nil
 	},
 }
 
 func init() {
+	editCmd.Flags().Bool("global", false, "Save to global config")
 	RootCmd.AddCommand(editCmd)
 }

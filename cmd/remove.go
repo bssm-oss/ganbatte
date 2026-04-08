@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/bssm-oss/ganbatte/internal/config"
 	"github.com/spf13/cobra"
@@ -17,39 +16,35 @@ Example:
   gnb remove gs
   gnb remove deploy`,
 	Args: cobra.ExactArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		name := args[0]
 
 		cfg, err := config.Load()
 		if err != nil {
-			fmt.Printf("Error loading config: %v\n", err)
-			os.Exit(1)
+			return fmt.Errorf("loading config: %w", err)
 		}
 
 		// Check if it's an alias
 		if _, exists := cfg.Aliases[name]; exists {
 			delete(cfg.Aliases, name)
 			if err := cfg.Save(); err != nil {
-				fmt.Printf("Error saving config: %v\n", err)
-				os.Exit(1)
+				return fmt.Errorf("saving config: %w", err)
 			}
-			fmt.Printf("Removed alias '%s'\n", name)
-			return
+			cmd.Printf("Removed alias '%s'\n", name)
+			return nil
 		}
 
 		// Check if it's a workflow
 		if _, exists := cfg.Workflows[name]; exists {
 			delete(cfg.Workflows, name)
 			if err := cfg.Save(); err != nil {
-				fmt.Printf("Error saving config: %v\n", err)
-				os.Exit(1)
+				return fmt.Errorf("saving config: %w", err)
 			}
-			fmt.Printf("Removed workflow '%s'\n", name)
-			return
+			cmd.Printf("Removed workflow '%s'\n", name)
+			return nil
 		}
 
-		fmt.Printf("Alias or workflow '%s' not found\n", name)
-		os.Exit(1)
+		return fmt.Errorf("alias or workflow '%s' not found", name)
 	},
 }
 

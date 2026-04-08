@@ -2,10 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"os"
-	"strings"
 
 	"github.com/bssm-oss/ganbatte/internal/config"
+	"github.com/bssm-oss/ganbatte/internal/workflow"
 	"github.com/spf13/cobra"
 )
 
@@ -17,71 +16,65 @@ var runCmd = &cobra.Command{
 Supports parameter substitution for workflows.
 Example:
   gnb run gs
-  gnb run deploy main`,
+  gnb run deploy main
+  gnb run deploy main --dry-run`,
 	Args: cobra.MinimumNArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		name := args[0]
-		runArgs := args[1:] // Additional arguments for parameter substitution
+		runArgs := args[1:]
+		dryRun, _ := cmd.Flags().GetBool("dry-run")
 
 		cfg, err := config.Load()
 		if err != nil {
-			fmt.Printf("Error loading config: %v\n", err)
-			os.Exit(1)
+			return fmt.Errorf("loading config: %w", err)
 		}
 
 		// Check if it's an alias
 		if alias, exists := cfg.Aliases[name]; exists {
-			fmt.Printf("Running alias: %s\n", alias.Cmd)
-			// TODO: Actual command execution (will be implemented in workflow package)
-			fmt.Printf("[SIMULATED] Executing: %s\n", alias.Cmd)
-			return
+			if dryRun {
+				cmd.Printf("[dry-run] %s\n", alias.Cmd)
+				if workflow.IsDestructive(alias.Cmd) {
+					cmd.Printf("[DESTRUCTIVE] command detected\n")
+				}
+				return nil
+			}
+			cmd.Printf("Running: %s\n", alias.Cmd)
+			ex := &workflow.RealExecutor{}
+			return ex.Execute(alias.Cmd)
 		}
 
 		// Check if it's a workflow
-		if workflowDef, exists := cfg.Workflows[name]; exists {
-			fmt.Printf("Running workflow: %s\n", workflowDef.Description)
-
-			// Simple parameter substitution
-			paramMap := make(map[string]string)
-			for i, param := range workflowDef.Params {
-				if i < len(runArgs) {
-					paramMap["{"+param+"}"] = runArgs[i]
-				} else {
-					paramMap["{"+param+"}"] = "" // Empty if not provided
-				}
+		if wfDef, exists := cfg.Workflows[name]; exists {
+			wf := workflow.Workflow{
+				Description: wfDef.Description,
+				Params:      wfDef.Params,
+				Tags:        wfDef.Tags,
+			}
+			for _, s := range wfDef.Steps {
+				wf.Steps = append(wf.Steps, workflow.Step{
+					Run:     s.Run,
+					OnFail:  s.OnFail,
+					Confirm: s.Confirm,
+				})
 			}
 
-			// Execute each step
-			for i, step := range workflowDef.Steps {
-				stepCmd := step.Run
-				// Apply parameter substitution
-				for placeholder, value := range paramMap {
-					stepCmd = strings.ReplaceAll(stepCmd, placeholder, value)
-				}
-
-				fmt.Printf("Step %d/%d: %s\n", i+1, len(workflowDef.Steps), stepCmd)
-
-				// TODO: Actual command execution with proper error handling
-				// For now, just simulate
-				if step.Confirm {
-					fmt.Printf("[SIMULATED] Would prompt for confirmation before: %s\n", stepCmd)
-				} else {
-					fmt.Printf("[SIMULATED] Executing: %s\n", stepCmd)
-				}
-
-				// Handle on_fail logic (simplified)
-				if step.OnFail == "stop" {
-					fmt.Printf("[SIMULATED] Would stop on failure\n")
-				}
+			if dryRun {
+				cmd.Printf("Workflow: %s (dry-run)\n", wfDef.Description)
+			} else {
+				cmd.Printf("Running workflow: %s\n", wfDef.Description)
 			}
-			return
+
+			return workflow.Run(wf, runArgs, &workflow.RealExecutor{}, workflow.RunOptions{
+				DryRun: dryRun,
+				Writer: cmd.OutOrStdout(),
+			})
 		}
 
-		fmt.Printf("Alias or workflow '%s' not found\n", name)
-		os.Exit(1)
+		return fmt.Errorf("alias or workflow '%s' not found", name)
 	},
 }
 
 func init() {
+	runCmd.Flags().Bool("dry-run", false, "Preview steps without executing")
 	RootCmd.AddCommand(runCmd)
 }

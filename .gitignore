@@ -21,4 +21,7 @@ target
 #.idea/
 gnb
 config.out
+coverage.out
+cmd_cov.out
+*.out
 ralph-loop.local.md
