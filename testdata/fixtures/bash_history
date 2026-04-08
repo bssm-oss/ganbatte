@@ -1,0 +1,18 @@
+git status -sb
+git add .
+git commit -m "update"
+git push origin main
+git status -sb
+git add .
+git commit -m "fix"
+git push origin main
+ls -la
+cd projects
+git status -sb
+npm test
+npm test
+npm test
+npm test
+npm test
+npm test
+npm test

@@ -3,7 +3,6 @@ package cmd
 import (
 	"bytes"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"testing"
 
@@ -11,111 +10,475 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestAddAliasCommand(t *testing.T) {
-	// Create a temporary directory for testing
+// executeCmd sets args on RootCmd, captures output, and executes.
+// Resets flags to defaults before each call to avoid cross-test pollution.
+func executeCmd(args ...string) (string, error) {
+	buf := new(bytes.Buffer)
+	RootCmd.SetOut(buf)
+	RootCmd.SetErr(buf)
+	RootCmd.SetArgs(args)
+	// Reset flags to avoid state leaking between tests
+	_ = runCmd.Flags().Set("dry-run", "false")
+	_ = listCmd.Flags().Set("tag", "")
+	_ = suggestCmd.Flags().Set("apply", "false")
+	_ = suggestCmd.Flags().Set("min-frequency", "5")
+	_ = suggestCmd.Flags().Set("min-sequence", "3")
+	_ = configConvertCmd.Flags().Set("to", "")
+	_ = exportCmd.Flags().Set("output", "")
+	_ = exportCmd.Flags().Set("format", "toml")
+	_ = importCmd.Flags().Set("replace", "false")
+	_ = addCmd.Flags().Set("global", "false")
+	_ = editCmd.Flags().Set("global", "false")
+	_ = initCmd.Flags().Set("format", "")
+	err := RootCmd.Execute()
+	return buf.String(), err
+}
+
+// setupTestHome sets HOME to a temp directory and returns its path.
+func setupTestHome(t *testing.T) string {
+	t.Helper()
 	tmpDir := t.TempDir()
+	t.Setenv("HOME", tmpDir)
+	return tmpDir
+}
 
-	// Set HOME to temp directory
-	oldHome := os.Getenv("HOME")
-	err := os.Setenv("HOME", tmpDir)
+// --- init ---
+
+func TestInitCommand(t *testing.T) {
+	home := setupTestHome(t)
+	t.Setenv("SHELL", "/bin/zsh")
+
+	out, err := executeCmd("init", "--format", "toml")
 	require.NoError(t, err)
-	defer func() {
-		if oldHome == "" {
-			os.Unsetenv("HOME")
-		} else {
-			os.Setenv("HOME", oldHome)
-		}
-	}()
+	assert.Contains(t, out, "Detected shell: zsh")
+	assert.Contains(t, out, "Created toml config")
+	assert.FileExists(t, filepath.Join(home, ".config", "ganbatte", "config.toml"))
+}
 
-	// Get the absolute path to the gnb binary
-	gnbPath, err := filepath.Abs("./gnb")
+func TestInitYaml(t *testing.T) {
+	home := setupTestHome(t)
+
+	out, err := executeCmd("init", "--format", "yaml")
 	require.NoError(t, err)
+	assert.Contains(t, out, "Created yaml config")
+	assert.FileExists(t, filepath.Join(home, ".config", "ganbatte", "config.yaml"))
+}
 
-	// Run gnb init first to create config
-	initCmd := exec.Command(gnbPath, "init")
-	initCmd.Dir = tmpDir
-	var initOut bytes.Buffer
-	initCmd.Stdout = &initOut
-	initCmd.Stderr = &initOut
-	err = initCmd.Run()
-	require.NoError(t, err)
+func TestInitInvalidFormat(t *testing.T) {
+	setupTestHome(t)
 
-	// Now test add command
-	addCmd := exec.Command(gnbPath, "add", "testalias", "echo hello")
-	addCmd.Dir = tmpDir
-	var addOut bytes.Buffer
-	addCmd.Stdout = &addOut
-	addCmd.Stderr = &addOut
-	err = addCmd.Run()
-	require.NoError(t, err)
+	_, err := executeCmd("init", "--format", "xml")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "unsupported format")
+}
 
-	// Check output
-	output := addOut.String()
-	assert.Contains(t, output, "Added alias 'testalias'")
-	assert.Contains(t, output, "echo hello")
+// --- add ---
 
-	// Verify it was actually added by running list
-	listCmd := exec.Command(gnbPath, "list")
-	listCmd.Dir = tmpDir
-	var listOut bytes.Buffer
-	listCmd.Stdout = &listOut
-	listCmd.Stderr = &listOut
-	err = listCmd.Run()
+func TestAddAliasCommand(t *testing.T) {
+	setupTestHome(t)
+	_, err := executeCmd("init", "--format", "toml")
 	require.NoError(t, err)
 
-	listOutput := listOut.String()
-	assert.Contains(t, listOutput, "testalias")
-	assert.Contains(t, listOutput, "echo hello")
+	out, err := executeCmd("add", "gs", "git status -sb")
+	require.NoError(t, err)
+	assert.Contains(t, out, "Added alias 'gs'")
+
+	out, err = executeCmd("list")
+	require.NoError(t, err)
+	assert.Contains(t, out, "gs")
+	assert.Contains(t, out, "git status -sb")
 }
 
 func TestAddDuplicateAlias(t *testing.T) {
-	// Create a temporary directory for testing
-	tmpDir := t.TempDir()
+	setupTestHome(t)
+	_, _ = executeCmd("init", "--format", "toml")
+	_, _ = executeCmd("add", "dup", "first command")
 
-	// Set HOME to temp directory
-	oldHome := os.Getenv("HOME")
-	err := os.Setenv("HOME", tmpDir)
+	_, err := executeCmd("add", "dup", "second command")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "already exists")
+}
+
+func TestAddMissingArgs(t *testing.T) {
+	setupTestHome(t)
+	_, err := executeCmd("add")
+	require.Error(t, err)
+	_, err = executeCmd("add", "onlyname")
+	require.Error(t, err)
+}
+
+// --- edit ---
+
+func TestEditCommand(t *testing.T) {
+	setupTestHome(t)
+	_, _ = executeCmd("init", "--format", "toml")
+	_, _ = executeCmd("add", "gs", "git status")
+
+	out, err := executeCmd("edit", "gs", "git status -sb")
 	require.NoError(t, err)
-	defer func() {
-		if oldHome == "" {
-			os.Unsetenv("HOME")
-		} else {
-			os.Setenv("HOME", oldHome)
-		}
-	}()
+	assert.Contains(t, out, "Updated alias 'gs'")
 
-	// Get the absolute path to the gnb binary
-	gnbPath, err := filepath.Abs("./gnb")
+	out, _ = executeCmd("list")
+	assert.Contains(t, out, "git status -sb")
+}
+
+func TestEditNonexistent(t *testing.T) {
+	setupTestHome(t)
+	_, _ = executeCmd("init", "--format", "toml")
+
+	_, err := executeCmd("edit", "nope", "something")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "not found")
+}
+
+// --- remove ---
+
+func TestRemoveCommand(t *testing.T) {
+	setupTestHome(t)
+	_, _ = executeCmd("init", "--format", "toml")
+	_, _ = executeCmd("add", "rm_me", "echo bye")
+
+	out, err := executeCmd("remove", "rm_me")
 	require.NoError(t, err)
+	assert.Contains(t, out, "Removed alias 'rm_me'")
 
-	// Run gnb init first to create config
-	initCmd := exec.Command(gnbPath, "init")
-	initCmd.Dir = tmpDir
-	var initOut bytes.Buffer
-	initCmd.Stdout = &initOut
-	initCmd.Stderr = &initOut
-	err = initCmd.Run()
+	out, _ = executeCmd("list")
+	assert.NotContains(t, out, "rm_me")
+}
+
+func TestRemoveNonexistent(t *testing.T) {
+	setupTestHome(t)
+	_, _ = executeCmd("init", "--format", "toml")
+
+	_, err := executeCmd("remove", "ghost")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "not found")
+}
+
+// --- run ---
+
+func TestRunAliasDryRun(t *testing.T) {
+	setupTestHome(t)
+	_, _ = executeCmd("init", "--format", "toml")
+	_, _ = executeCmd("add", "gs", "git status -sb")
+
+	out, err := executeCmd("run", "gs", "--dry-run")
 	require.NoError(t, err)
+	assert.Contains(t, out, "[dry-run]")
+	assert.Contains(t, out, "git status -sb")
+}
 
-	// Add an alias first time
-	addCmd1 := exec.Command(gnbPath, "add", "duptest", "first command")
-	addCmd1.Dir = tmpDir
-	var addOut1 bytes.Buffer
-	addCmd1.Stdout = &addOut1
-	addCmd1.Stderr = &addOut1
-	err = addCmd1.Run()
+func TestRunAliasDestructiveDryRun(t *testing.T) {
+	setupTestHome(t)
+	_, _ = executeCmd("init", "--format", "toml")
+	_, _ = executeCmd("add", "danger", "rm -rf /tmp/test")
+
+	out, err := executeCmd("run", "danger", "--dry-run")
 	require.NoError(t, err)
+	assert.Contains(t, out, "[DESTRUCTIVE]")
+}
 
-	// Try to add the same alias again - should fail
-	addCmd2 := exec.Command(gnbPath, "add", "duptest", "second command")
-	addCmd2.Dir = tmpDir
-	var addOut2 bytes.Buffer
-	addCmd2.Stdout = &addOut2
-	addCmd2.Stderr = &addOut2
-	err = addCmd2.Run()
-	assert.Error(t, err) // Should fail
+func TestRunNonexistent(t *testing.T) {
+	setupTestHome(t)
+	_, _ = executeCmd("init", "--format", "toml")
 
-	// Check that error message indicates duplicate
-	assert.Contains(t, addOut2.String(), "already exists")
-	assert.Contains(t, addOut2.String(), "Use 'gnb edit'")
+	_, err := executeCmd("run", "nope")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "not found")
+}
+
+func TestRunAliasActual(t *testing.T) {
+	setupTestHome(t)
+	_, _ = executeCmd("init", "--format", "toml")
+	_, _ = executeCmd("add", "hi", "echo hello")
+
+	out, err := executeCmd("run", "hi")
+	require.NoError(t, err)
+	assert.Contains(t, out, "Running: echo hello")
+}
+
+// --- list ---
+
+func TestListEmpty(t *testing.T) {
+	setupTestHome(t)
+	_, _ = executeCmd("init", "--format", "toml")
+
+	out, err := executeCmd("list")
+	require.NoError(t, err)
+	assert.Contains(t, out, "No aliases found")
+	assert.Contains(t, out, "No workflows found")
+}
+
+func TestListTagFilter(t *testing.T) {
+	setupTestHome(t)
+	_, _ = executeCmd("init", "--format", "toml")
+	_, _ = executeCmd("add", "gs", "git status")
+
+	// Without tag filter: shows aliases
+	out, _ := executeCmd("list")
+	assert.Contains(t, out, "gs")
+
+	// With tag filter: aliases hidden (no tags on aliases)
+	out, _ = executeCmd("list", "--tag", "deploy")
+	assert.NotContains(t, out, "gs")
+}
+
+func TestListTagFilterWorkflow(t *testing.T) {
+	home := setupTestHome(t)
+
+	// Write config with workflow + tags directly
+	configDir := filepath.Join(home, ".config", "ganbatte")
+	os.MkdirAll(configDir, 0755)
+	os.WriteFile(filepath.Join(configDir, "config.toml"), []byte(`
+version = "0.1.0"
+[alias.gs]
+cmd = "git status"
+[workflow.deploy]
+description = "Deploy app"
+tags = ["ci", "deploy"]
+[[workflow.deploy.steps]]
+run = "pnpm build"
+`), 0644)
+
+	// Without filter: shows both
+	out, err := executeCmd("list")
+	require.NoError(t, err)
+	assert.Contains(t, out, "gs")
+	assert.Contains(t, out, "deploy")
+
+	// With tag filter: only workflow with matching tag
+	out, err = executeCmd("list", "--tag", "ci")
+	require.NoError(t, err)
+	assert.Contains(t, out, "deploy")
+	assert.Contains(t, out, "No aliases found") // aliases hidden when tag filter active
+
+	// With non-matching tag: no workflows
+	out, err = executeCmd("list", "--tag", "nonexistent")
+	require.NoError(t, err)
+	assert.NotContains(t, out, "deploy")
+}
+
+func TestShowWorkflow(t *testing.T) {
+	home := setupTestHome(t)
+
+	configDir := filepath.Join(home, ".config", "ganbatte")
+	os.MkdirAll(configDir, 0755)
+	os.WriteFile(filepath.Join(configDir, "config.toml"), []byte(`
+version = "0.1.0"
+[workflow.deploy]
+description = "Deploy app"
+params = ["branch"]
+tags = ["ci"]
+[[workflow.deploy.steps]]
+run = "pnpm build"
+on_fail = "stop"
+[[workflow.deploy.steps]]
+run = "git push origin {branch}"
+confirm = true
+`), 0644)
+
+	out, err := executeCmd("show", "deploy")
+	require.NoError(t, err)
+	assert.Contains(t, out, "Workflow: deploy")
+	assert.Contains(t, out, "Deploy app")
+	assert.Contains(t, out, "pnpm build")
+	assert.Contains(t, out, "on_fail: stop")
+	assert.Contains(t, out, "confirm: true")
+	assert.Contains(t, out, "ci")
+}
+
+func TestRunWorkflowDryRun(t *testing.T) {
+	home := setupTestHome(t)
+
+	configDir := filepath.Join(home, ".config", "ganbatte")
+	os.MkdirAll(configDir, 0755)
+	os.WriteFile(filepath.Join(configDir, "config.toml"), []byte(`
+version = "0.1.0"
+[workflow.deploy]
+description = "Deploy"
+params = ["branch"]
+[[workflow.deploy.steps]]
+run = "echo building"
+[[workflow.deploy.steps]]
+run = "git push -f origin {branch}"
+confirm = true
+`), 0644)
+
+	out, err := executeCmd("run", "deploy", "main", "--dry-run")
+	require.NoError(t, err)
+	assert.Contains(t, out, "dry-run")
+	assert.Contains(t, out, "echo building")
+	assert.Contains(t, out, "[DESTRUCTIVE]")
+	assert.Contains(t, out, "git push -f origin main")
+}
+
+func TestAddGlobalFlag(t *testing.T) {
+	setupTestHome(t)
+	_, _ = executeCmd("init", "--format", "toml")
+
+	out, err := executeCmd("add", "--global", "gs", "git status")
+	require.NoError(t, err)
+	assert.Contains(t, out, "(global)")
+}
+
+func TestEditGlobalFlag(t *testing.T) {
+	setupTestHome(t)
+	_, _ = executeCmd("init", "--format", "toml")
+	_, _ = executeCmd("add", "gs", "git status")
+
+	out, err := executeCmd("edit", "--global", "gs", "git status -sb")
+	require.NoError(t, err)
+	assert.Contains(t, out, "(global)")
+}
+
+// --- show ---
+
+func TestShowAlias(t *testing.T) {
+	setupTestHome(t)
+	_, _ = executeCmd("init", "--format", "toml")
+	_, _ = executeCmd("add", "gs", "git status -sb")
+
+	out, err := executeCmd("show", "gs")
+	require.NoError(t, err)
+	assert.Contains(t, out, "Alias: gs")
+	assert.Contains(t, out, "Command: git status -sb")
+}
+
+func TestShowNonexistent(t *testing.T) {
+	setupTestHome(t)
+	_, _ = executeCmd("init", "--format", "toml")
+
+	_, err := executeCmd("show", "nope")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "not found")
+}
+
+// --- doctor ---
+
+func TestDoctorCommand(t *testing.T) {
+	setupTestHome(t)
+	t.Setenv("SHELL", "/bin/zsh")
+
+	// Before init: warns about missing config
+	out, err := executeCmd("doctor")
+	require.NoError(t, err)
+	assert.Contains(t, out, "[OK] Shell: zsh")
+	assert.Contains(t, out, "[WARN] No global config found")
+
+	// After init: config OK
+	_, _ = executeCmd("init", "--format", "toml")
+	out, err = executeCmd("doctor")
+	require.NoError(t, err)
+	assert.Contains(t, out, "[OK] Global config:")
+}
+
+// --- config path ---
+
+func TestConfigPath(t *testing.T) {
+	home := setupTestHome(t)
+	_, _ = executeCmd("init", "--format", "toml")
+
+	out, err := executeCmd("config", "path")
+	require.NoError(t, err)
+	assert.Contains(t, out, home)
+	assert.Contains(t, out, "config.toml")
+}
+
+func TestConfigPathNoConfig(t *testing.T) {
+	setupTestHome(t)
+
+	out, err := executeCmd("config", "path")
+	require.NoError(t, err)
+	assert.Contains(t, out, "No config file found")
+}
+
+// --- config convert ---
+
+func TestConfigConvert(t *testing.T) {
+	home := setupTestHome(t)
+	_, _ = executeCmd("init", "--format", "toml")
+
+	out, err := executeCmd("config", "convert", "--to", "yaml")
+	require.NoError(t, err)
+	assert.Contains(t, out, "Converted")
+	assert.Contains(t, out, "yaml")
+
+	// Verify yaml file was created
+	yamlPath := filepath.Join(home, ".config", "ganbatte", "config.yaml")
+	assert.FileExists(t, yamlPath)
+}
+
+func TestConfigConvertMissingFlag(t *testing.T) {
+	setupTestHome(t)
+	_, _ = executeCmd("init", "--format", "toml")
+
+	_, err := executeCmd("config", "convert")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "--to flag is required")
+}
+
+// --- export / import ---
+
+func TestExportImport(t *testing.T) {
+	home := setupTestHome(t)
+	_, _ = executeCmd("init", "--format", "toml")
+	_, _ = executeCmd("add", "gs", "git status -sb")
+	_, _ = executeCmd("add", "ll", "ls -la")
+
+	exportPath := filepath.Join(home, "backup.toml")
+	out, err := executeCmd("export", "--output", exportPath)
+	require.NoError(t, err)
+	assert.Contains(t, out, "Exported")
+	assert.FileExists(t, exportPath)
+
+	// Remove aliases, then import
+	_, _ = executeCmd("remove", "gs")
+	_, _ = executeCmd("remove", "ll")
+
+	out, err = executeCmd("import", exportPath)
+	require.NoError(t, err)
+	assert.Contains(t, out, "Added")
+	assert.Contains(t, out, "Config saved")
+
+	// Verify imported
+	out, _ = executeCmd("list")
+	assert.Contains(t, out, "gs")
+	assert.Contains(t, out, "ll")
+}
+
+func TestExportMissingOutput(t *testing.T) {
+	setupTestHome(t)
+	_, _ = executeCmd("init", "--format", "toml")
+
+	_, err := executeCmd("export")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "--output flag is required")
+}
+
+func TestImportMergeSkipsExisting(t *testing.T) {
+	home := setupTestHome(t)
+	_, _ = executeCmd("init", "--format", "toml")
+	_, _ = executeCmd("add", "gs", "git status")
+
+	// Export
+	exportPath := filepath.Join(home, "export.toml")
+	_, _ = executeCmd("export", "--output", exportPath)
+
+	// Import into same config (gs already exists)
+	out, err := executeCmd("import", exportPath)
+	require.NoError(t, err)
+	assert.Contains(t, out, "Skipped")
+}
+
+// --- root ---
+
+func TestRootCommand(t *testing.T) {
+	setupTestHome(t)
+
+	// Without config: shows empty state message
+	out, err := executeCmd()
+	require.NoError(t, err)
+	assert.Contains(t, out, "No aliases or workflows configured")
+
+	// With config + items: would launch TUI (can't test interactive TUI here)
 }

@@ -1,7 +1,9 @@
 package workflow
 
 import (
+	"bytes"
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -22,12 +24,11 @@ func (m *MockExecutor) Execute(command string) error {
 }
 
 func TestWorkflowRun_Success(t *testing.T) {
-	// Arrange
 	wf := Workflow{
 		Description: "Test workflow",
 		Params:      []string{"env"},
 		Steps: []Step{
-			{Run: "echo hello", OnFail: "stop", Confirm: false},
+			{Run: "echo hello", OnFail: "stop"},
 			{Run: "echo {env}", OnFail: "continue", Confirm: true},
 		},
 		Tags: []string{"test"},
@@ -36,10 +37,9 @@ func TestWorkflowRun_Success(t *testing.T) {
 	executor := &MockExecutor{}
 	args := []string{"production"}
 
-	// Act
-	err := Run(wf, args, executor)
-
-	// Assert
+	err := Run(wf, args, executor, RunOptions{
+		Reader: strings.NewReader("y\n"),
+	})
 	assert.NoError(t, err)
 	assert.Len(t, executor.ExecuteCalls, 2)
 	assert.Equal(t, "echo hello", executor.ExecuteCalls[0])
@@ -47,12 +47,10 @@ func TestWorkflowRun_Success(t *testing.T) {
 }
 
 func TestWorkflowRun_WithStopOnFailure(t *testing.T) {
-	// Arrange
 	wf := Workflow{
-		Description: "Test workflow",
 		Steps: []Step{
-			{Run: "fail command", OnFail: "stop", Confirm: false},
-			{Run: "should not run", OnFail: "stop", Confirm: false},
+			{Run: "fail command", OnFail: "stop"},
+			{Run: "should not run", OnFail: "stop"},
 		},
 	}
 
@@ -65,22 +63,17 @@ func TestWorkflowRun_WithStopOnFailure(t *testing.T) {
 		},
 	}
 
-	// Act
-	err := Run(wf, []string{}, executor)
-
-	// Assert
+	err := Run(wf, []string{}, executor, RunOptions{})
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "step 1 failed")
-	assert.Len(t, executor.ExecuteCalls, 1) // Only first command should execute
+	assert.Len(t, executor.ExecuteCalls, 1)
 }
 
 func TestWorkflowRun_WithContinueOnFailure(t *testing.T) {
-	// Arrange
 	wf := Workflow{
-		Description: "Test workflow",
 		Steps: []Step{
-			{Run: "fail command", OnFail: "continue", Confirm: false},
-			{Run: "second command", OnFail: "stop", Confirm: false},
+			{Run: "fail command", OnFail: "continue"},
+			{Run: "second command", OnFail: "stop"},
 		},
 	}
 
@@ -93,33 +86,25 @@ func TestWorkflowRun_WithContinueOnFailure(t *testing.T) {
 		},
 	}
 
-	// Act
-	err := Run(wf, []string{}, executor)
-
-	// Assert
-	assert.NoError(t, err)                  // Should not error because continue
-	assert.Len(t, executor.ExecuteCalls, 2) // Both commands should execute
+	err := Run(wf, []string{}, executor, RunOptions{})
+	assert.NoError(t, err)
+	assert.Len(t, executor.ExecuteCalls, 2)
 }
 
 func TestWorkflowRun_WithParameterSubstitution(t *testing.T) {
-	// Arrange
 	wf := Workflow{
-		Description: "Test workflow",
-		Params:      []string{"name", "value"},
+		Params: []string{"name", "value"},
 		Steps: []Step{
-			{Run: "echo Hello {name}", OnFail: "stop", Confirm: false},
-			{Run: "echo Value is {value}", OnFail: "stop", Confirm: false},
-			{Run: "echo No param here", OnFail: "stop", Confirm: false},
+			{Run: "echo Hello {name}"},
+			{Run: "echo Value is {value}"},
+			{Run: "echo No param here"},
 		},
 	}
 
 	executor := &MockExecutor{}
 	args := []string{"World", "42"}
 
-	// Act
-	err := Run(wf, args, executor)
-
-	// Assert
+	err := Run(wf, args, executor, RunOptions{})
 	assert.NoError(t, err)
 	assert.Len(t, executor.ExecuteCalls, 3)
 	assert.Equal(t, "echo Hello World", executor.ExecuteCalls[0])
@@ -128,40 +113,120 @@ func TestWorkflowRun_WithParameterSubstitution(t *testing.T) {
 }
 
 func TestWorkflowRun_WithMissingParameters(t *testing.T) {
-	// Arrange
 	wf := Workflow{
-		Description: "Test workflow",
-		Params:      []string{"required", "optional"},
+		Params: []string{"required", "optional"},
 		Steps: []Step{
-			{Run: "echo {required}-{optional}", OnFail: "stop", Confirm: false},
+			{Run: "echo {required}-{optional}"},
 		},
 	}
 
 	executor := &MockExecutor{}
-	args := []string{"given"} // Only one arg provided
+	args := []string{"given"}
 
-	// Act
-	err := Run(wf, args, executor)
-
-	// Assert
+	err := Run(wf, args, executor, RunOptions{})
 	assert.NoError(t, err)
 	assert.Len(t, executor.ExecuteCalls, 1)
-	assert.Equal(t, "echo given-", executor.ExecuteCalls[0]) // Optional should be empty
+	assert.Equal(t, "echo given-", executor.ExecuteCalls[0])
 }
 
 func TestWorkflowRun_EmptyWorkflow(t *testing.T) {
-	// Arrange
 	wf := Workflow{
 		Description: "Empty workflow",
-		Steps:       []Step{}, // No steps
+		Steps:       []Step{},
 	}
 
 	executor := &MockExecutor{}
-
-	// Act
-	err := Run(wf, []string{}, executor)
-
-	// Assert
+	err := Run(wf, []string{}, executor, RunOptions{})
 	assert.NoError(t, err)
-	assert.Len(t, executor.ExecuteCalls, 0) // No commands should execute
+	assert.Len(t, executor.ExecuteCalls, 0)
+}
+
+func TestWorkflowRun_DryRun(t *testing.T) {
+	wf := Workflow{
+		Description: "Deploy workflow",
+		Params:      []string{"branch"},
+		Steps: []Step{
+			{Run: "pnpm lint"},
+			{Run: "pnpm test", OnFail: "continue"},
+			{Run: "git push -f origin {branch}", Confirm: true},
+		},
+	}
+
+	buf := new(bytes.Buffer)
+	executor := &MockExecutor{}
+
+	err := Run(wf, []string{"main"}, executor, RunOptions{
+		DryRun: true,
+		Writer: buf,
+	})
+
+	assert.NoError(t, err)
+	assert.Empty(t, executor.ExecuteCalls) // nothing should execute
+
+	out := buf.String()
+	assert.Contains(t, out, "1. pnpm lint")
+	assert.Contains(t, out, "2. pnpm test")
+	assert.Contains(t, out, "on_fail: continue")
+	assert.Contains(t, out, "[DESTRUCTIVE]")
+	assert.Contains(t, out, "git push -f origin main")
+	assert.Contains(t, out, "(requires confirmation)")
+}
+
+func TestWorkflowRun_ConfirmYes(t *testing.T) {
+	wf := Workflow{
+		Steps: []Step{
+			{Run: "echo safe"},
+			{Run: "echo dangerous", Confirm: true},
+		},
+	}
+
+	outBuf := new(bytes.Buffer)
+	inBuf := strings.NewReader("y\n")
+	executor := &MockExecutor{}
+
+	err := Run(wf, []string{}, executor, RunOptions{
+		Writer: outBuf,
+		Reader: inBuf,
+	})
+
+	assert.NoError(t, err)
+	assert.Len(t, executor.ExecuteCalls, 2)
+	assert.Equal(t, "echo dangerous", executor.ExecuteCalls[1])
+}
+
+func TestWorkflowRun_ConfirmNo(t *testing.T) {
+	wf := Workflow{
+		Steps: []Step{
+			{Run: "echo safe"},
+			{Run: "echo dangerous", Confirm: true},
+			{Run: "echo after"},
+		},
+	}
+
+	outBuf := new(bytes.Buffer)
+	inBuf := strings.NewReader("n\n")
+	executor := &MockExecutor{}
+
+	err := Run(wf, []string{}, executor, RunOptions{
+		Writer: outBuf,
+		Reader: inBuf,
+	})
+
+	assert.NoError(t, err)
+	assert.Len(t, executor.ExecuteCalls, 2) // safe + after (dangerous skipped)
+	assert.Equal(t, "echo safe", executor.ExecuteCalls[0])
+	assert.Equal(t, "echo after", executor.ExecuteCalls[1])
+	assert.Contains(t, outBuf.String(), "Skipped")
+}
+
+func TestIsDestructive(t *testing.T) {
+	assert.True(t, IsDestructive("rm -rf /tmp/foo"))
+	assert.True(t, IsDestructive("git push -f origin main"))
+	assert.True(t, IsDestructive("git push --force origin main"))
+	assert.True(t, IsDestructive("git reset --hard HEAD~1"))
+	assert.True(t, IsDestructive("DROP TABLE users"))
+	assert.True(t, IsDestructive("DELETE FROM users"))
+	assert.False(t, IsDestructive("echo hello"))
+	assert.False(t, IsDestructive("git push origin main"))
+	assert.False(t, IsDestructive("pnpm test"))
 }
