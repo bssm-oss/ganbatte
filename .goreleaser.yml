@@ -1,0 +1,52 @@
+version: 2
+
+project_name: ganbatte
+
+before:
+  hooks:
+    - go mod tidy
+    - go test ./...
+
+builds:
+  - binary: gnb
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+
+archives:
+  - format: tar.gz
+    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        format: zip
+
+brews:
+  - repository:
+      owner: bssm-oss
+      name: homebrew-tap
+    homepage: https://github.com/bssm-oss/ganbatte
+    description: "Workflow/shortcut management CLI for lazy developers"
+    license: MIT
+    install: |
+      bin.install "gnb"
+    test: |
+      system "#{bin}/gnb", "--help"
+
+checksum:
+  name_template: checksums.txt
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
