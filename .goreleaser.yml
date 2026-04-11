@@ -30,9 +30,9 @@ archives:
 
 brews:
   - repository:
-      owner: bssm-oss
+      owner: justn-hyeok
       name: homebrew-tap
-    homepage: https://github.com/bssm-oss/ganbatte
+    homepage: https://github.com/justn-hyeok/ganbatte
     description: "Workflow/shortcut management CLI for lazy developers"
     license: MIT
     install: |

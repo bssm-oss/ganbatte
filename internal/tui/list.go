@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/bssm-oss/ganbatte/internal/config"
+	"github.com/justn-hyeok/ganbatte/internal/config"
 )
 
 // ItemType represents the type of a list item.

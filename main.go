@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/bssm-oss/ganbatte/cmd"
+	"github.com/justn-hyeok/ganbatte/cmd"
 )
 
 func main() {

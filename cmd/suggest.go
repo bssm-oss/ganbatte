@@ -3,9 +3,9 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/bssm-oss/ganbatte/internal/config"
-	"github.com/bssm-oss/ganbatte/internal/history"
-	"github.com/bssm-oss/ganbatte/internal/shell"
+	"github.com/justn-hyeok/ganbatte/internal/config"
+	"github.com/justn-hyeok/ganbatte/internal/history"
+	"github.com/justn-hyeok/ganbatte/internal/shell"
 	"github.com/spf13/cobra"
 )
 

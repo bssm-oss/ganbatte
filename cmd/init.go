@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/bssm-oss/ganbatte/internal/shell"
+	"github.com/justn-hyeok/ganbatte/internal/shell"
 	"github.com/spf13/cobra"
 )
 

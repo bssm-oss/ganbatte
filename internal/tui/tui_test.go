@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/bssm-oss/ganbatte/internal/config"
+	"github.com/justn-hyeok/ganbatte/internal/config"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/stretchr/testify/assert"
 )

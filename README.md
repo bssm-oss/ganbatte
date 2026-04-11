@@ -20,10 +20,10 @@
 
 ```bash
 # From source
-go install github.com/bssm-oss/ganbatte@latest
+go install github.com/justn-hyeok/ganbatte@latest
 
 # Or build locally
-git clone https://github.com/bssm-oss/ganbatte.git
+git clone https://github.com/justn-hyeok/ganbatte.git
 cd ganbatte
 go build -o gnb .
 ```
