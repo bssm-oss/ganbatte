@@ -96,7 +96,7 @@ func TestMerge_WorkflowConflict(t *testing.T) {
 
 func TestLoadScoped_GlobalOnly(t *testing.T) {
 	tmpDir := t.TempDir()
-	t.Setenv("HOME", tmpDir)
+	setTestHome(t, tmpDir)
 
 	configDir := filepath.Join(tmpDir, ".config", "ganbatte")
 	require.NoError(t, os.MkdirAll(configDir, 0755))
@@ -117,7 +117,7 @@ cmd = "git status"
 
 func TestLoadScoped_NoConfig(t *testing.T) {
 	tmpDir := t.TempDir()
-	t.Setenv("HOME", tmpDir)
+	setTestHome(t, tmpDir)
 
 	scoped, err := LoadScoped()
 	require.NoError(t, err)
@@ -128,7 +128,7 @@ func TestLoadScoped_NoConfig(t *testing.T) {
 
 func TestSaveGlobal(t *testing.T) {
 	tmpDir := t.TempDir()
-	t.Setenv("HOME", tmpDir)
+	setTestHome(t, tmpDir)
 
 	cfg := &Config{
 		Version: "0.1.0",
@@ -148,7 +148,7 @@ func TestSaveGlobal(t *testing.T) {
 
 func TestSave_DefaultPath(t *testing.T) {
 	tmpDir := t.TempDir()
-	t.Setenv("HOME", tmpDir)
+	setTestHome(t, tmpDir)
 
 	// Create config dir first
 	configDir := filepath.Join(tmpDir, ".config", "ganbatte")
@@ -167,7 +167,7 @@ func TestSave_DefaultPath(t *testing.T) {
 
 func TestLoad_NoConfigReturnsDefaults(t *testing.T) {
 	tmpDir := t.TempDir()
-	t.Setenv("HOME", tmpDir)
+	setTestHome(t, tmpDir)
 
 	cfg, err := Load()
 	require.NoError(t, err)
@@ -178,7 +178,7 @@ func TestLoad_NoConfigReturnsDefaults(t *testing.T) {
 
 func TestLoad_WithTomlFixture(t *testing.T) {
 	tmpDir := t.TempDir()
-	t.Setenv("HOME", tmpDir)
+	setTestHome(t, tmpDir)
 
 	configDir := filepath.Join(tmpDir, ".config", "ganbatte")
 	require.NoError(t, os.MkdirAll(configDir, 0755))

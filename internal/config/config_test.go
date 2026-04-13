@@ -3,12 +3,38 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+// setTestHome sets HOME (and USERPROFILE on Windows) to dir, returning a restore func.
+func setTestHome(t *testing.T, dir string) {
+	t.Helper()
+	oldHome := os.Getenv("HOME")
+	os.Setenv("HOME", dir)
+	if runtime.GOOS == "windows" {
+		oldProfile := os.Getenv("USERPROFILE")
+		os.Setenv("USERPROFILE", dir)
+		t.Cleanup(func() {
+			if oldProfile == "" {
+				os.Unsetenv("USERPROFILE")
+			} else {
+				os.Setenv("USERPROFILE", oldProfile)
+			}
+		})
+	}
+	t.Cleanup(func() {
+		if oldHome == "" {
+			os.Unsetenv("HOME")
+		} else {
+			os.Setenv("HOME", oldHome)
+		}
+	})
+}
 
 func TestNewViper(t *testing.T) {
 	v := NewViper()
@@ -17,20 +43,8 @@ func TestNewViper(t *testing.T) {
 }
 
 func TestLoadDefaultConfig(t *testing.T) {
-	// Create a temporary directory for testing
 	tmpDir := t.TempDir()
-
-	// Set HOME to temp directory
-	oldHome := os.Getenv("HOME")
-	err := os.Setenv("HOME", tmpDir)
-	require.NoError(t, err)
-	defer func() {
-		if oldHome == "" {
-			os.Unsetenv("HOME")
-		} else {
-			os.Setenv("HOME", oldHome)
-		}
-	}()
+	setTestHome(t, tmpDir)
 
 	// Load config (should return default since no file exists)
 	cfg, err := Load()
@@ -68,17 +82,7 @@ steps = [
 	err = os.WriteFile(configFile, []byte(configContent), 0644)
 	require.NoError(t, err)
 
-	// Set HOME to temp directory
-	oldHome := os.Getenv("HOME")
-	err = os.Setenv("HOME", tmpDir)
-	require.NoError(t, err)
-	defer func() {
-		if oldHome == "" {
-			os.Unsetenv("HOME")
-		} else {
-			os.Setenv("HOME", oldHome)
-		}
-	}()
+	setTestHome(t, tmpDir)
 
 	// Load config
 	cfg, err := Load()
@@ -114,17 +118,7 @@ global_scope = true
 	err = os.WriteFile(configFile, []byte(initialContent), 0644)
 	require.NoError(t, err)
 
-	// Set HOME to temp directory
-	oldHome := os.Getenv("HOME")
-	err = os.Setenv("HOME", tmpDir)
-	require.NoError(t, err)
-	defer func() {
-		if oldHome == "" {
-			os.Unsetenv("HOME")
-		} else {
-			os.Setenv("HOME", oldHome)
-		}
-	}()
+	setTestHome(t, tmpDir)
 
 	// Load existing config
 	cfg, err := Load()
@@ -214,17 +208,7 @@ cmd = "test command"
 			err = os.WriteFile(configFile, []byte(tc.content), 0644)
 			require.NoError(t, err)
 
-			// Set HOME to temp directory
-			oldHome := os.Getenv("HOME")
-			err = os.Setenv("HOME", tmpDir)
-			require.NoError(t, err)
-			defer func() {
-				if oldHome == "" {
-					os.Unsetenv("HOME")
-				} else {
-					os.Setenv("HOME", oldHome)
-				}
-			}()
+			setTestHome(t, tmpDir)
 
 			// Load config WITH explicit config type
 			v := viper.New()

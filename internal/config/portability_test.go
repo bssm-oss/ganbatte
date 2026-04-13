@@ -107,7 +107,7 @@ func TestImport_FileNotFound(t *testing.T) {
 
 func TestLoadWithMeta(t *testing.T) {
 	tmpDir := t.TempDir()
-	t.Setenv("HOME", tmpDir)
+	setTestHome(t, tmpDir)
 
 	// No config → meta is nil
 	cfg, meta, err := LoadWithMeta()

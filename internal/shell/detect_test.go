@@ -2,6 +2,7 @@ package shell
 
 import (
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -31,6 +32,9 @@ func TestDetect(t *testing.T) {
 func TestHistoryPath(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
+	if runtime.GOOS == "windows" {
+		t.Setenv("USERPROFILE", home)
+	}
 	t.Setenv("HISTFILE", "")
 	t.Setenv("XDG_DATA_HOME", "")
 
