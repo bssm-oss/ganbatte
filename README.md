@@ -57,6 +57,9 @@ gnb migrate --dry-run      # 미리보기만
 ## Install
 
 ```bash
+# Homebrew (macOS / Linux)
+brew install justn-hyeok/tap/ganbatte
+
 # go install
 go install github.com/justn-hyeok/ganbatte@latest
 
