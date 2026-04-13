@@ -118,7 +118,15 @@ func Run(wf Workflow, args []string, ex Executor, opts RunOptions) error {
 				fmt.Fprintf(w, "[Step %d failed, continuing: %v]\n", i+1, err)
 			case "prompt":
 				fmt.Fprintf(w, "[Step %d failed: %v]\n", i+1, err)
-				return fmt.Errorf("step %d failed: %w", i+1, err)
+				fmt.Fprintf(w, "Continue? [y/N] ")
+				scanner := bufio.NewScanner(r)
+				if scanner.Scan() {
+					input := strings.TrimSpace(strings.ToLower(scanner.Text()))
+					if input == "y" || input == "yes" {
+						continue
+					}
+				}
+				return fmt.Errorf("step %d failed (aborted by user): %w", i+1, err)
 			default:
 				return fmt.Errorf("step %d failed: %w", i+1, err)
 			}

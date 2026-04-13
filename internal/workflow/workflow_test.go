@@ -219,6 +219,62 @@ func TestWorkflowRun_ConfirmNo(t *testing.T) {
 	assert.Contains(t, outBuf.String(), "Skipped")
 }
 
+func TestWorkflowRun_OnFailPrompt_Continue(t *testing.T) {
+	mock := &MockExecutor{
+		ExecuteFunc: func(cmd string) error {
+			if cmd == "failing-step" {
+				return errors.New("step failed")
+			}
+			return nil
+		},
+	}
+
+	wf := Workflow{
+		Steps: []Step{
+			{Run: "failing-step", OnFail: "prompt"},
+			{Run: "next-step"},
+		},
+	}
+
+	var out bytes.Buffer
+	err := Run(wf, nil, mock, RunOptions{
+		Writer: &out,
+		Reader: strings.NewReader("y\n"),
+	})
+
+	assert.NoError(t, err)
+	assert.Contains(t, out.String(), "Continue? [y/N]")
+	assert.Equal(t, 2, len(mock.ExecuteCalls))
+}
+
+func TestWorkflowRun_OnFailPrompt_Abort(t *testing.T) {
+	mock := &MockExecutor{
+		ExecuteFunc: func(cmd string) error {
+			if cmd == "failing-step" {
+				return errors.New("step failed")
+			}
+			return nil
+		},
+	}
+
+	wf := Workflow{
+		Steps: []Step{
+			{Run: "failing-step", OnFail: "prompt"},
+			{Run: "next-step"},
+		},
+	}
+
+	var out bytes.Buffer
+	err := Run(wf, nil, mock, RunOptions{
+		Writer: &out,
+		Reader: strings.NewReader("n\n"),
+	})
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "aborted by user")
+	assert.Equal(t, 1, len(mock.ExecuteCalls))
+}
+
 func TestIsDestructive(t *testing.T) {
 	assert.True(t, IsDestructive("rm -rf /tmp/foo"))
 	assert.True(t, IsDestructive("git push -f origin main"))
