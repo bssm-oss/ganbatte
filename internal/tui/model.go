@@ -269,14 +269,15 @@ func (m Model) View() string {
 
 	// Status bar
 	var status string
-	if m.mode == confirmDeleteMode && len(m.filteredItems) > 0 {
+	switch {
+	case m.mode == confirmDeleteMode && len(m.filteredItems) > 0:
 		item := m.filteredItems[m.cursor]
 		status = warnStyle.Render(fmt.Sprintf("Delete '%s'? (y/N)", item.Name))
-	} else if m.mode == searchMode {
+	case m.mode == searchMode:
 		status = searchStyle.Render("/ ") + m.searchInput.View()
-	} else if m.tagFilter != "" {
+	case m.tagFilter != "":
 		status = tagStyle.Render(fmt.Sprintf("Tag: %s", m.tagFilter))
-	} else {
+	default:
 		status = helpStyle.Render("↑↓ navigate • enter run • e edit • d delete • / search • t tag • ? help • q quit")
 	}
 

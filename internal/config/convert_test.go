@@ -17,7 +17,7 @@ func TestConvert_TomlToYaml(t *testing.T) {
 	data, err := os.ReadFile(src)
 	require.NoError(t, err)
 	srcCopy := filepath.Join(tmpDir, "config.toml")
-	require.NoError(t, os.WriteFile(srcCopy, data, 0644))
+	require.NoError(t, os.WriteFile(srcCopy, data, 0o644))
 
 	dest, err := Convert(srcCopy, "yaml")
 	require.NoError(t, err)
@@ -32,7 +32,7 @@ func TestConvert_TomlToJson(t *testing.T) {
 	data, err := os.ReadFile(src)
 	require.NoError(t, err)
 	srcCopy := filepath.Join(tmpDir, "config.toml")
-	require.NoError(t, os.WriteFile(srcCopy, data, 0644))
+	require.NoError(t, os.WriteFile(srcCopy, data, 0o644))
 
 	dest, err := Convert(srcCopy, "json")
 	require.NoError(t, err)

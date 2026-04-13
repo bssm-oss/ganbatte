@@ -62,7 +62,7 @@ func TestLoadTomlConfig(t *testing.T) {
 
 	// Create config directory and file
 	configDir := filepath.Join(tmpDir, ".config", "ganbatte")
-	err := os.MkdirAll(configDir, 0755)
+	err := os.MkdirAll(configDir, 0o755)
 	require.NoError(t, err)
 
 	configFile := filepath.Join(configDir, "config.toml")
@@ -79,7 +79,7 @@ steps = [
   { run = "echo test" }
 ]
 `
-	err = os.WriteFile(configFile, []byte(configContent), 0644)
+	err = os.WriteFile(configFile, []byte(configContent), 0o644)
 	require.NoError(t, err)
 
 	setTestHome(t, tmpDir)
@@ -108,14 +108,14 @@ func TestSaveConfig(t *testing.T) {
 
 	// Create initial config
 	configDir := filepath.Join(tmpDir, ".config", "ganbatte")
-	err := os.MkdirAll(configDir, 0755)
+	err := os.MkdirAll(configDir, 0o755)
 	require.NoError(t, err)
 
 	configFile := filepath.Join(configDir, "config.toml")
 	initialContent := `version = "0.1.0"
 global_scope = true
 `
-	err = os.WriteFile(configFile, []byte(initialContent), 0644)
+	err = os.WriteFile(configFile, []byte(initialContent), 0o644)
 	require.NoError(t, err)
 
 	setTestHome(t, tmpDir)
@@ -201,11 +201,11 @@ cmd = "test command"
 
 			// Create config directory and file
 			configDir := filepath.Join(tmpDir, ".config", "ganbatte")
-			err := os.MkdirAll(configDir, 0755)
+			err := os.MkdirAll(configDir, 0o755)
 			require.NoError(t, err)
 
 			configFile := filepath.Join(configDir, "config."+tc.ext)
-			err = os.WriteFile(configFile, []byte(tc.content), 0644)
+			err = os.WriteFile(configFile, []byte(tc.content), 0o644)
 			require.NoError(t, err)
 
 			setTestHome(t, tmpDir)

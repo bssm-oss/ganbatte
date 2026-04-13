@@ -57,9 +57,10 @@ func TestHistoryPath(t *testing.T) {
 	})
 
 	t.Run("fish with XDG_DATA_HOME", func(t *testing.T) {
-		t.Setenv("XDG_DATA_HOME", "/custom/data")
+		customData := filepath.Join(t.TempDir(), "custom-data")
+		t.Setenv("XDG_DATA_HOME", customData)
 		path := HistoryPath("fish")
-		assert.Equal(t, filepath.Join("/custom/data", "fish", "fish_history"), path)
+		assert.Equal(t, filepath.Join(customData, "fish", "fish_history"), path)
 	})
 
 	t.Run("HISTFILE override", func(t *testing.T) {

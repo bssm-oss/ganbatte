@@ -55,7 +55,7 @@ version = "0.1.0"
 cmd = "echo new"
 [alias.existing]
 cmd = "echo imported"
-`), 0644)
+`), 0o644)
 	require.NoError(t, err)
 
 	target := &Config{
@@ -81,7 +81,7 @@ func TestImport_Replace(t *testing.T) {
 version = "0.1.0"
 [alias.existing]
 cmd = "echo replaced"
-`), 0644)
+`), 0o644)
 	require.NoError(t, err)
 
 	target := &Config{
@@ -117,9 +117,9 @@ func TestLoadWithMeta(t *testing.T) {
 
 	// Create config
 	configDir := filepath.Join(tmpDir, ".config", "ganbatte")
-	require.NoError(t, os.MkdirAll(configDir, 0755))
+	require.NoError(t, os.MkdirAll(configDir, 0o755))
 	configFile := filepath.Join(configDir, "config.toml")
-	require.NoError(t, os.WriteFile(configFile, []byte(`version = "0.1.0"`), 0644))
+	require.NoError(t, os.WriteFile(configFile, []byte(`version = "0.1.0"`), 0o644))
 
 	cfg, meta, err = LoadWithMeta()
 	require.NoError(t, err)

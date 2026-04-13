@@ -175,7 +175,7 @@ func (c *Config) SaveGlobal() error {
 	}
 
 	configDir := filepath.Join(home, ".config", "ganbatte")
-	if err := os.MkdirAll(configDir, 0755); err != nil {
+	if err := os.MkdirAll(configDir, 0o755); err != nil {
 		return fmt.Errorf("creating config directory: %w", err)
 	}
 
@@ -240,7 +240,7 @@ func (c *Config) Save() error {
 	} else {
 		// 홈 디렉토리의 설정 파일 사용 (기본값: toml)
 		configDir := filepath.Join(home, ".config", "ganbatte")
-		if err := os.MkdirAll(configDir, 0755); err != nil {
+		if err := os.MkdirAll(configDir, 0o755); err != nil {
 			return fmt.Errorf("creating config directory: %w", err)
 		}
 

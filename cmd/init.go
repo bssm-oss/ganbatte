@@ -162,13 +162,13 @@ func initGlobal(cmd *cobra.Command, format string) error {
 	}
 
 	configDir := filepath.Join(home, ".config", "ganbatte")
-	if err := os.MkdirAll(configDir, 0755); err != nil {
+	if err := os.MkdirAll(configDir, 0o755); err != nil {
 		return fmt.Errorf("creating config directory: %w", err)
 	}
 
 	configFile := filepath.Join(configDir, "config."+format)
 	content := defaultConfigs[format]
-	if err := os.WriteFile(configFile, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(configFile, []byte(content), 0o644); err != nil {
 		return fmt.Errorf("writing config file: %w", err)
 	}
 
@@ -184,7 +184,7 @@ func initProject(cmd *cobra.Command, format string) error {
 	}
 
 	content := projectConfigs[format]
-	if err := os.WriteFile(configFile, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(configFile, []byte(content), 0o644); err != nil {
 		return fmt.Errorf("writing project config: %w", err)
 	}
 

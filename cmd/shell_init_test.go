@@ -134,7 +134,7 @@ func TestShellInitCommand(t *testing.T) {
 
 	// Create config with aliases
 	configDir := filepath.Join(home, ".config", "ganbatte")
-	require.NoError(t, os.MkdirAll(configDir, 0755))
+	require.NoError(t, os.MkdirAll(configDir, 0o755))
 	require.NoError(t, os.WriteFile(
 		filepath.Join(configDir, "config.toml"),
 		[]byte(`version = "1.0.0"
@@ -142,7 +142,7 @@ func TestShellInitCommand(t *testing.T) {
 cmd = "git status -sb"
 [alias.gl]
 cmd = "git log --oneline"
-`), 0644))
+`), 0o644))
 
 	out, err := executeCmd("shell-init", "--shell", "zsh")
 	require.NoError(t, err)
@@ -155,13 +155,13 @@ func TestShellInitCommand_Fish(t *testing.T) {
 	home := setupTestHome(t)
 
 	configDir := filepath.Join(home, ".config", "ganbatte")
-	require.NoError(t, os.MkdirAll(configDir, 0755))
+	require.NoError(t, os.MkdirAll(configDir, 0o755))
 	require.NoError(t, os.WriteFile(
 		filepath.Join(configDir, "config.toml"),
 		[]byte(`version = "1.0.0"
 [alias.gs]
 cmd = "git status -sb"
-`), 0644))
+`), 0o644))
 
 	out, err := executeCmd("shell-init", "--shell", "fish")
 	require.NoError(t, err)

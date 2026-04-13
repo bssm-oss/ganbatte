@@ -99,12 +99,12 @@ func TestLoadScoped_GlobalOnly(t *testing.T) {
 	setTestHome(t, tmpDir)
 
 	configDir := filepath.Join(tmpDir, ".config", "ganbatte")
-	require.NoError(t, os.MkdirAll(configDir, 0755))
+	require.NoError(t, os.MkdirAll(configDir, 0o755))
 	require.NoError(t, os.WriteFile(filepath.Join(configDir, "config.toml"), []byte(`
 version = "0.1.0"
 [alias.gs]
 cmd = "git status"
-`), 0644))
+`), 0o644))
 
 	scoped, err := LoadScoped()
 	require.NoError(t, err)
@@ -152,7 +152,7 @@ func TestSave_DefaultPath(t *testing.T) {
 
 	// Create config dir first
 	configDir := filepath.Join(tmpDir, ".config", "ganbatte")
-	require.NoError(t, os.MkdirAll(configDir, 0755))
+	require.NoError(t, os.MkdirAll(configDir, 0o755))
 
 	cfg := &Config{
 		Version:   "0.1.0",
@@ -181,11 +181,11 @@ func TestLoad_WithTomlFixture(t *testing.T) {
 	setTestHome(t, tmpDir)
 
 	configDir := filepath.Join(tmpDir, ".config", "ganbatte")
-	require.NoError(t, os.MkdirAll(configDir, 0755))
+	require.NoError(t, os.MkdirAll(configDir, 0o755))
 
 	src, err := os.ReadFile(filepath.Join("..", "..", "testdata", "fixtures", "config.toml"))
 	require.NoError(t, err)
-	require.NoError(t, os.WriteFile(filepath.Join(configDir, "config.toml"), src, 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(configDir, "config.toml"), src, 0o644))
 
 	cfg, err := Load()
 	require.NoError(t, err)

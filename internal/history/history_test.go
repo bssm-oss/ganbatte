@@ -41,7 +41,7 @@ func TestZshParser_PlainFormat(t *testing.T) {
 	// Test with plain commands (no timestamps)
 	tmp := t.TempDir()
 	histFile := filepath.Join(tmp, "history")
-	err := os.WriteFile(histFile, []byte("echo hello\nls -la\n\n"), 0644)
+	err := os.WriteFile(histFile, []byte("echo hello\nls -la\n\n"), 0o644)
 	require.NoError(t, err)
 
 	p := &ZshParser{}
@@ -80,7 +80,7 @@ func TestBashParser(t *testing.T) {
 func TestBashParser_SkipsComments(t *testing.T) {
 	tmp := t.TempDir()
 	histFile := filepath.Join(tmp, "history")
-	err := os.WriteFile(histFile, []byte("#1700000001\necho hello\n#comment\n"), 0644)
+	err := os.WriteFile(histFile, []byte("#1700000001\necho hello\n#comment\n"), 0o644)
 	require.NoError(t, err)
 
 	p := &BashParser{}

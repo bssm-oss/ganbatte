@@ -15,7 +15,7 @@ import (
 
 func main() {
 	dir := "docs/man"
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0o755); err != nil {
 		fmt.Fprintf(os.Stderr, "Error creating dir: %v\n", err)
 		os.Exit(1)
 	}

@@ -42,7 +42,7 @@ Example:
 			return err
 		}
 
-		if err := os.WriteFile(output, data, 0644); err != nil {
+		if err := os.WriteFile(output, data, 0o644); err != nil {
 			return fmt.Errorf("writing export file: %w", err)
 		}
 
