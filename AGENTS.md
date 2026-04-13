@@ -22,7 +22,7 @@
 - **이름**: ganbatte (바이너리: `gnb`)
 - **한 줄**: lazy developers를 위한 워크플로우/단축어 관리 CLI
 - **언어**: Go
-- **상태**: v0.1 개발 중 (스코프는 `docs/spec.md` §9 참조)
+- **상태**: feature-complete pre-release (스코프는 `docs/spec.md` 참조)
 
 핵심 차별점은 두 가지:
 - **멀티포맷 설정 (TOML / YAML / JSON 동등 지원)**
@@ -54,12 +54,11 @@
 ```
 cmd/        ← cobra 명령. 비즈니스 로직 금지. 인자 파싱 + internal/ 호출만.
 internal/
-  config/   ← viper 래퍼. 외부에는 IR 구조체만 노출.
+  config/   ← viper 래퍼. IR 구조체, scoping, merge, portability, schema.
   workflow/ ← 실행 엔진. config를 import하지만 cmd는 import 안 함.
-  alias/
-  history/  ← shell history 파싱. 외부 파일 시스템 접근은 여기로 격리.
+  history/  ← shell history 파싱 + suggest 엔진. 외부 파일 시스템 접근은 여기로 격리.
   tui/      ← bubbletea 모델. 다른 internal 패키지를 import해서 표시만.
-  shell/    ← 셸 감지/통합.
+  shell/    ← 셸 감지, history path, alias 마이그레이션 파서.
 ```
 
 **규칙**:

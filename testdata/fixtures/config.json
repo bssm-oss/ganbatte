@@ -1,5 +1,5 @@
 {
-  "version": "0.1.0",
+  "version": "1.0.0",
   "global_scope": true,
   "alias": {
     "gs": {
@@ -7,50 +7,42 @@
     },
     "ll": {
       "cmd": "ls -la"
+    },
+    "gco": {
+      "cmd": "git checkout {branch}",
+      "params": ["branch"]
+    },
+    "glog": {
+      "cmd": "git log --oneline -{count}",
+      "params": ["count"],
+      "default_params": {
+        "count": "10"
+      }
+    },
+    "nuke": {
+      "cmd": "git reset --hard HEAD",
+      "confirm": true
     }
   },
   "workflow": {
     "deploy": {
       "description": "Deploy application",
-      "params": [
-        "env",
-        "version"
-      ],
+      "params": ["env", "version"],
       "steps": [
-        {
-          "run": "echo \"Linting code\""
-        },
-        {
-          "run": "echo \"Running tests\"",
-          "on_fail": "stop"
-        },
-        {
-          "run": "echo \"Building version {version} for {env}\""
-        },
-        {
-          "run": "echo \"Deploying to {env}\"",
-          "confirm": true
-        }
+        { "run": "echo \"Linting code\"" },
+        { "run": "echo \"Running tests\"", "on_fail": "stop" },
+        { "run": "echo \"Building version {version} for {env}\"" },
+        { "run": "echo \"Deploying to {env}\"", "confirm": true }
       ],
-      "tags": [
-        "deploy",
-        "ci"
-      ]
+      "tags": ["deploy", "ci"]
     },
     "test": {
       "description": "Run test suite",
       "steps": [
-        {
-          "run": "go test ./unit"
-        },
-        {
-          "run": "go test ./integration",
-          "on_fail": "continue"
-        }
+        { "run": "go test ./unit" },
+        { "run": "go test ./integration", "on_fail": "continue" }
       ],
-      "tags": [
-        "test"
-      ]
+      "tags": ["test"]
     }
   }
 }

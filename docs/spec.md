@@ -120,8 +120,8 @@ workflow:
 | 명령 | 설명 |
 |---|---|
 | `gnb add <name> <cmd...>` | alias 추가 |
-| `gnb new <name>` | 워크플로우 새로 만들기 (에디터 띄움) |
-| `gnb edit <name>` | 기존 항목 수정 |
+| `gnb edit <name> <cmd>` | 기존 alias 수정 (워크플로우는 설정 파일 직접 편집) |
+| `gnb edit <name> <cmd> [--global]` | 기존 항목 수정 |
 | `gnb remove <name>` | 삭제 |
 | `gnb list [--tag <tag>] [--scope global|project]` | 목록 |
 | `gnb show <name>` | 상세 정보 |
@@ -142,9 +142,8 @@ workflow:
 ### 3.5 설정
 | 명령 | 설명 |
 |---|---|
-| `gnb config show` | 현재 설정 출력 |
+| `gnb config path` | 활성 설정 파일 경로 출력 |
 | `gnb config convert --to <format>` | 설정 파일 포맷 변환 |
-| `gnb config path` | 활성 설정 파일 경로 출력 (syncingsh 연동에 유용) |
 
 ---
 

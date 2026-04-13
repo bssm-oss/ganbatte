@@ -1,5 +1,5 @@
 # Test configuration for ganbatte
-version = "0.1.0"
+version = "1.0.0"
 global_scope = true
 
 [alias.gs]
@@ -7,6 +7,19 @@ cmd = "git status -sb"
 
 [alias.ll]
 cmd = "ls -la"
+
+[alias.gco]
+cmd = "git checkout {branch}"
+params = ["branch"]
+
+[alias.glog]
+cmd = "git log --oneline -{count}"
+params = ["count"]
+default_params = { count = "10" }
+
+[alias.nuke]
+cmd = "git reset --hard HEAD"
+confirm = true
 
 [workflow.deploy]
 description = "Deploy application"
