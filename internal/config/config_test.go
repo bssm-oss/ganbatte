@@ -151,7 +151,7 @@ global_scope = true
 	assert.Equal(t, "0.3.0", cfg2.Version)
 	assert.False(t, cfg2.Global)
 	assert.Len(t, cfg2.Aliases, 1)
-	assert.Equal(t, Alias{Cmd: "new command"}, cfg2.Aliases["new-alias"])
+	assert.Equal(t, "new command", cfg2.Aliases["new-alias"].Cmd)
 }
 
 func TestConfigFormatEquivalence(t *testing.T) {

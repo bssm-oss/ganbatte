@@ -74,43 +74,78 @@ Example:
 			return nil
 		}
 
-		// Display suggestions
-		for i, s := range suggestions {
+		// Split by type for sectioned display
+		var aliasSugs, wfSugs []history.Suggestion
+		for _, s := range suggestions {
 			switch s.Type {
 			case "alias":
-				cmd.Printf("%d. [alias] %s = %s\n", i+1, s.Name, s.Command)
-				cmd.Printf("   %s\n\n", s.Reason)
+				aliasSugs = append(aliasSugs, s)
 			case "workflow":
-				cmd.Printf("%d. [workflow] %s\n", i+1, s.Name)
-				for j, step := range s.Steps {
-					cmd.Printf("   Step %d: %s\n", j+1, step)
-				}
-				cmd.Printf("   %s\n\n", s.Reason)
+				wfSugs = append(wfSugs, s)
 			}
+		}
+
+		if len(aliasSugs) > 0 {
+			cmd.Println("=== Alias Suggestions (frequency) ===")
+			for i, s := range aliasSugs {
+				cmd.Printf("  %d. %s = %s\n", i+1, s.Name, s.Command)
+				cmd.Printf("     %s\n", s.Reason)
+			}
+			cmd.Println()
+		}
+
+		if len(wfSugs) > 0 {
+			cmd.Println("=== Workflow Suggestions (sequences) ===")
+			for i, s := range wfSugs {
+				cmd.Printf("  %d. %s\n", i+1, s.Name)
+				for j, step := range s.Steps {
+					cmd.Printf("     Step %d: %s\n", j+1, step)
+				}
+				cmd.Printf("     %s\n", s.Reason)
+			}
+			cmd.Println()
 		}
 
 		// Apply mode
 		if apply {
 			applied := 0
-			for _, s := range suggestions {
-				if s.Type == "alias" {
-					if cfg.Aliases == nil {
-						cfg.Aliases = make(map[string]config.Alias)
-					}
-					if _, exists := cfg.Aliases[s.Name]; !exists {
-						cfg.Aliases[s.Name] = config.Alias{Cmd: s.Command}
-						cmd.Printf("Added alias '%s' = %s\n", s.Name, s.Command)
-						applied++
-					}
+
+			for _, s := range aliasSugs {
+				if cfg.Aliases == nil {
+					cfg.Aliases = make(map[string]config.Alias)
+				}
+				if _, exists := cfg.Aliases[s.Name]; !exists {
+					cfg.Aliases[s.Name] = config.Alias{Cmd: s.Command}
+					cmd.Printf("Added alias '%s' = %s\n", s.Name, s.Command)
+					applied++
 				}
 			}
+
+			for _, s := range wfSugs {
+				if cfg.Workflows == nil {
+					cfg.Workflows = make(map[string]config.Workflow)
+				}
+				if _, exists := cfg.Workflows[s.Name]; !exists {
+					steps := make([]config.Step, len(s.Steps))
+					for j, step := range s.Steps {
+						steps[j] = config.Step{Run: step}
+					}
+					cfg.Workflows[s.Name] = config.Workflow{
+						Description: s.Reason,
+						Steps:       steps,
+					}
+					cmd.Printf("Added workflow '%s' (%d steps)\n", s.Name, len(s.Steps))
+					applied++
+				}
+			}
+
 			if applied > 0 {
 				if err := cfg.Save(); err != nil {
 					return fmt.Errorf("saving config: %w", err)
 				}
-				cmd.Printf("\n%d alias(es) applied to config\n", applied)
+				cmd.Printf("\n%d item(s) applied to config\n", applied)
 			} else {
-				cmd.Println("No new aliases to apply")
+				cmd.Println("No new items to apply")
 			}
 		}
 

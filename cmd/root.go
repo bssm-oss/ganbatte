@@ -1,9 +1,11 @@
 package cmd
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
@@ -20,12 +22,13 @@ var RootCmd = &cobra.Command{
 	Long:         `워크플로우/단축어 관리 CLI. lazyasf의 정신적 후속작으로, 단순 alias 관리를 넘어 명령 시퀀스를 워크플로우로 묶고, shell history에서 패턴을 자동 발굴해 추천하는 도구.`,
 	SilenceUsage: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := config.Load()
+		scoped, err := config.LoadScoped()
 		if err != nil {
 			return fmt.Errorf("loading config: %w", err)
 		}
+		cfg := scoped.Merged
 
-		items := tui.ItemsFromConfig(cfg)
+		items := tui.ItemsFromScopedConfig(scoped)
 		if len(items) == 0 {
 			cmd.Println("No aliases or workflows configured.")
 			cmd.Println("Run 'gnb init' to get started, then 'gnb add <name> <command>' to add aliases.")
@@ -62,6 +65,20 @@ var RootCmd = &cobra.Command{
 func handleRun(item *tui.Item) error {
 	switch item.Type {
 	case tui.AliasItem:
+		if item.Confirm {
+			fmt.Fprintf(os.Stdout, "⚠ Run \"%s\"? [y/N] ", item.Command)
+			scanner := bufio.NewScanner(os.Stdin)
+			if scanner.Scan() {
+				input := strings.TrimSpace(strings.ToLower(scanner.Text()))
+				if input != "y" && input != "yes" {
+					fmt.Fprintln(os.Stdout, "Cancelled")
+					return nil
+				}
+			} else {
+				fmt.Fprintln(os.Stdout, "Cancelled (no input)")
+				return nil
+			}
+		}
 		fmt.Fprintf(os.Stdout, "Running: %s\n", item.Command)
 		ex := &workflow.RealExecutor{}
 		return ex.Execute(item.Command)

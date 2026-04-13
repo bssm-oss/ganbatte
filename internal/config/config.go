@@ -18,7 +18,10 @@ type Config struct {
 
 // Alias represents a shell alias
 type Alias struct {
-	Cmd string `mapstructure:"cmd"`
+	Cmd           string            `mapstructure:"cmd"`
+	Params        []string          `mapstructure:"params"`
+	DefaultParams map[string]string `mapstructure:"default_params"`
+	Confirm       bool              `mapstructure:"confirm"`
 }
 
 // Workflow represents a sequence of steps

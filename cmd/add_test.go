@@ -19,6 +19,7 @@ func executeCmd(args ...string) (string, error) {
 	RootCmd.SetArgs(args)
 	// Reset flags to avoid state leaking between tests
 	_ = runCmd.Flags().Set("dry-run", "false")
+	_ = runCmd.Flags().Set("yes", "false")
 	_ = listCmd.Flags().Set("tag", "")
 	_ = suggestCmd.Flags().Set("apply", "false")
 	_ = suggestCmd.Flags().Set("min-frequency", "5")
@@ -30,6 +31,8 @@ func executeCmd(args ...string) (string, error) {
 	_ = addCmd.Flags().Set("global", "false")
 	_ = editCmd.Flags().Set("global", "false")
 	_ = initCmd.Flags().Set("format", "")
+	_ = initCmd.Flags().Set("project", "false")
+	_ = shellInitCmd.Flags().Set("shell", "")
 	err := RootCmd.Execute()
 	return buf.String(), err
 }

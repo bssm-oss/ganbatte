@@ -1,7 +1,10 @@
 package cmd
 
 import (
+	"bufio"
 	"fmt"
+	"os"
+	"strings"
 
 	"github.com/justn-hyeok/ganbatte/internal/config"
 	"github.com/justn-hyeok/ganbatte/internal/workflow"
@@ -29,18 +32,41 @@ Example:
 			return fmt.Errorf("loading config: %w", err)
 		}
 
+		yes, _ := cmd.Flags().GetBool("yes")
+
 		// Check if it's an alias
 		if alias, exists := cfg.Aliases[name]; exists {
+			resolved := resolveAliasCmd(alias, runArgs)
+
 			if dryRun {
-				cmd.Printf("[dry-run] %s\n", alias.Cmd)
-				if workflow.IsDestructive(alias.Cmd) {
+				cmd.Printf("[dry-run] %s\n", resolved)
+				if workflow.IsDestructive(resolved) {
 					cmd.Printf("[DESTRUCTIVE] command detected\n")
+				}
+				if alias.Confirm {
+					cmd.Printf("[requires confirmation]\n")
 				}
 				return nil
 			}
-			cmd.Printf("Running: %s\n", alias.Cmd)
+
+			if alias.Confirm && !yes {
+				fmt.Fprintf(cmd.OutOrStdout(), "⚠ Run \"%s\"? [y/N] ", resolved)
+				scanner := bufio.NewScanner(os.Stdin)
+				if scanner.Scan() {
+					input := strings.TrimSpace(strings.ToLower(scanner.Text()))
+					if input != "y" && input != "yes" {
+						cmd.Println("Cancelled")
+						return nil
+					}
+				} else {
+					cmd.Println("Cancelled (no input)")
+					return nil
+				}
+			}
+
+			cmd.Printf("Running: %s\n", resolved)
 			ex := &workflow.RealExecutor{}
-			return ex.Execute(alias.Cmd)
+			return ex.Execute(resolved)
 		}
 
 		// Check if it's a workflow
@@ -74,7 +100,30 @@ Example:
 	},
 }
 
+// resolveAliasCmd substitutes parameters in alias command string.
+func resolveAliasCmd(alias config.Alias, args []string) string {
+	resolved := alias.Cmd
+
+	if len(alias.Params) == 0 {
+		return resolved
+	}
+
+	for i, param := range alias.Params {
+		placeholder := "{" + param + "}"
+		var value string
+		if i < len(args) {
+			value = args[i]
+		} else if alias.DefaultParams != nil {
+			value = alias.DefaultParams[param]
+		}
+		resolved = strings.ReplaceAll(resolved, placeholder, value)
+	}
+
+	return resolved
+}
+
 func init() {
 	runCmd.Flags().Bool("dry-run", false, "Preview steps without executing")
+	runCmd.Flags().BoolP("yes", "y", false, "Skip confirmation prompts")
 	RootCmd.AddCommand(runCmd)
 }
