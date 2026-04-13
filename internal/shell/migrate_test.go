@@ -3,6 +3,7 @@ package shell
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -87,6 +88,9 @@ func TestParseShellAliases_FileNotFound(t *testing.T) {
 func TestFindShellConfigs(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
+	if runtime.GOOS == "windows" {
+		t.Setenv("USERPROFILE", home)
+	}
 
 	// Create some config files
 	require.NoError(t, os.WriteFile(filepath.Join(home, ".zshrc"), []byte(""), 0o644))
