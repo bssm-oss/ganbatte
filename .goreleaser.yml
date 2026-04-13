@@ -32,6 +32,7 @@ brews:
   - repository:
       owner: justn-hyeok
       name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
     homepage: https://github.com/justn-hyeok/ganbatte
     description: "Workflow/shortcut management CLI for lazy developers"
     license: MIT
