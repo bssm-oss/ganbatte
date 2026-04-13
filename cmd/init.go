@@ -13,7 +13,7 @@ import (
 
 var defaultConfigs = map[string]string{
 	"toml": `# ganbatte configuration file
-version = "0.1.0"
+version = "1.0.0"
 global_scope = true
 
 # [alias.gs]
@@ -31,7 +31,7 @@ global_scope = true
 # tags = ["deploy", "ci"]
 `,
 	"yaml": `# ganbatte configuration file
-version: "0.1.0"
+version: "1.0.0"
 global_scope: true
 
 # alias:
@@ -52,7 +52,7 @@ global_scope: true
 #     tags: [deploy, ci]
 `,
 	"json": `{
-  "version": "0.1.0",
+  "version": "1.0.0",
   "global_scope": true,
   "alias": {},
   "workflow": {}

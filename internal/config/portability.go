@@ -48,14 +48,20 @@ func Export(cfg *Config, opts ExportOptions) ([]byte, error) {
 	v.Set("alias", subset.Aliases)
 	v.Set("workflow", subset.Workflows)
 
-	tmpFile := fmt.Sprintf("/tmp/gnb-export-%d.%s", os.Getpid(), format)
-	v.SetConfigFile(tmpFile)
-	if err := v.WriteConfigAs(tmpFile); err != nil {
+	tmpFile, err := os.CreateTemp("", "gnb-export-*."+format)
+	if err != nil {
+		return nil, fmt.Errorf("creating temp file: %w", err)
+	}
+	tmpPath := tmpFile.Name()
+	tmpFile.Close()
+	defer os.Remove(tmpPath)
+
+	v.SetConfigFile(tmpPath)
+	if err := v.WriteConfigAs(tmpPath); err != nil {
 		return nil, fmt.Errorf("serializing config: %w", err)
 	}
-	defer os.Remove(tmpFile)
 
-	return os.ReadFile(tmpFile)
+	return os.ReadFile(tmpPath)
 }
 
 // ImportResult contains the result of an import operation.

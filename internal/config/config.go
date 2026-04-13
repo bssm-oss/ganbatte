@@ -164,6 +164,7 @@ func LoadWithMeta() (*Config, *LoadMeta, error) {
 }
 
 // SaveGlobal 글로벌 설정 파일에 강제로 저장합니다.
+// 기존 글로벌 설정 파일의 포맷을 감지하여 동일한 포맷으로 저장합니다.
 func (c *Config) SaveGlobal() error {
 	home, err := os.UserHomeDir()
 	if err != nil {
@@ -175,9 +176,11 @@ func (c *Config) SaveGlobal() error {
 		return fmt.Errorf("creating config directory: %w", err)
 	}
 
+	// 기존 글로벌 설정 파일 포맷 감지
+	configFile, format := detectGlobalConfig(configDir)
+
 	v := viper.New()
-	configFile := filepath.Join(configDir, "config.toml")
-	v.SetConfigType("toml")
+	v.SetConfigType(format)
 	v.SetConfigFile(configFile)
 	v.Set("version", c.Version)
 	v.Set("global_scope", c.Global)
@@ -188,6 +191,22 @@ func (c *Config) SaveGlobal() error {
 		return fmt.Errorf("writing config: %w", err)
 	}
 	return nil
+}
+
+// detectGlobalConfig finds the existing global config file and its format.
+// Falls back to config.toml if no existing file is found.
+func detectGlobalConfig(configDir string) (filePath string, format string) {
+	for _, ext := range []string{"toml", "yaml", "yml", "json"} {
+		path := filepath.Join(configDir, "config."+ext)
+		if _, err := os.Stat(path); err == nil {
+			f := ext
+			if f == "yml" {
+				f = "yaml"
+			}
+			return path, f
+		}
+	}
+	return filepath.Join(configDir, "config.toml"), "toml"
 }
 
 // Save 설정 파일을 저장합니다.
