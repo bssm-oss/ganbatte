@@ -115,11 +115,6 @@ func suggestWorkflows(entries []Entry, opts SuggestOptions) []Suggestion {
 		return nil
 	}
 
-	// Look for consecutive command pairs/triples
-	type sequence struct {
-		steps []string
-	}
-
 	// Count 2-command and 3-command sequences
 	pairFreq := make(map[string]int)
 	tripleFreq := make(map[string]int)
@@ -208,7 +203,7 @@ func generateAliasName(cmd string) string {
 	}
 	for i := 0; i < limit; i++ {
 		word := strings.TrimLeft(parts[i], "-./")
-		if len(word) > 0 {
+		if word != "" {
 			name.WriteByte(word[0])
 		}
 	}

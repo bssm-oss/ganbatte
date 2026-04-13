@@ -10,7 +10,7 @@ import (
 
 // Convert reads a config file and writes it in the target format.
 // Returns the path to the new file.
-func Convert(srcPath string, targetFormat string) (string, error) {
+func Convert(srcPath, targetFormat string) (string, error) {
 	targetFormat = strings.ToLower(targetFormat)
 	switch targetFormat {
 	case "toml", "yaml", "json":

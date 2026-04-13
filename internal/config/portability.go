@@ -73,7 +73,7 @@ type ImportResult struct {
 
 // Import reads a config file and merges items into the target config.
 // strategy: "merge" (skip conflicts) or "replace" (overwrite conflicts).
-func Import(target *Config, srcPath string, strategy string) (*ImportResult, error) {
+func Import(target *Config, srcPath, strategy string) (*ImportResult, error) {
 	v := viper.New()
 	v.SetConfigFile(srcPath)
 

@@ -87,7 +87,7 @@ func generateShellInit(cfg *config.Config, sh string) string {
 // isValidFunctionName checks if the name can be used as a shell function name.
 // Allows alphanumeric, hyphens, and underscores. Must start with a letter or underscore.
 func isValidFunctionName(name string) bool {
-	if len(name) == 0 {
+	if name == "" {
 		return false
 	}
 	first := name[0]

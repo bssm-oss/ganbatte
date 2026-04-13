@@ -235,8 +235,8 @@ func TestListTagFilterWorkflow(t *testing.T) {
 
 	// Write config with workflow + tags directly
 	configDir := filepath.Join(home, ".config", "ganbatte")
-	os.MkdirAll(configDir, 0o755)
-	os.WriteFile(filepath.Join(configDir, "config.toml"), []byte(`
+	require.NoError(t, os.MkdirAll(configDir, 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(configDir, "config.toml"), []byte(`
 version = "0.1.0"
 [alias.gs]
 cmd = "git status"
@@ -245,7 +245,7 @@ description = "Deploy app"
 tags = ["ci", "deploy"]
 [[workflow.deploy.steps]]
 run = "pnpm build"
-`), 0o644)
+`), 0o644))
 
 	// Without filter: shows both
 	out, err := executeCmd("list")
@@ -269,8 +269,8 @@ func TestShowWorkflow(t *testing.T) {
 	home := setupTestHome(t)
 
 	configDir := filepath.Join(home, ".config", "ganbatte")
-	os.MkdirAll(configDir, 0o755)
-	os.WriteFile(filepath.Join(configDir, "config.toml"), []byte(`
+	require.NoError(t, os.MkdirAll(configDir, 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(configDir, "config.toml"), []byte(`
 version = "0.1.0"
 [workflow.deploy]
 description = "Deploy app"
@@ -282,7 +282,7 @@ on_fail = "stop"
 [[workflow.deploy.steps]]
 run = "git push origin {branch}"
 confirm = true
-`), 0o644)
+`), 0o644))
 
 	out, err := executeCmd("show", "deploy")
 	require.NoError(t, err)
@@ -298,8 +298,8 @@ func TestRunWorkflowDryRun(t *testing.T) {
 	home := setupTestHome(t)
 
 	configDir := filepath.Join(home, ".config", "ganbatte")
-	os.MkdirAll(configDir, 0o755)
-	os.WriteFile(filepath.Join(configDir, "config.toml"), []byte(`
+	require.NoError(t, os.MkdirAll(configDir, 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(configDir, "config.toml"), []byte(`
 version = "0.1.0"
 [workflow.deploy]
 description = "Deploy"
@@ -309,7 +309,7 @@ run = "echo building"
 [[workflow.deploy.steps]]
 run = "git push -f origin {branch}"
 confirm = true
-`), 0o644)
+`), 0o644))
 
 	out, err := executeCmd("run", "deploy", "main", "--dry-run")
 	require.NoError(t, err)

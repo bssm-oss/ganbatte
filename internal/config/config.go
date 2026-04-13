@@ -198,7 +198,7 @@ func (c *Config) SaveGlobal() error {
 
 // detectGlobalConfig finds the existing global config file and its format.
 // Falls back to config.toml if no existing file is found.
-func detectGlobalConfig(configDir string) (filePath string, format string) {
+func detectGlobalConfig(configDir string) (filePath, format string) {
 	for _, ext := range []string{"toml", "yaml", "yml", "json"} {
 		path := filepath.Join(configDir, "config."+ext)
 		if _, err := os.Stat(path); err == nil {
