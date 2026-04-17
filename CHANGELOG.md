@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [1.2.0] - 2026-04-17
 
 ### Added
 - `gnb migrate` — import existing shell aliases from .zshrc/.bashrc/config.fish in one command
