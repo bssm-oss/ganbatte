@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.0] - 2026-04-18
+
+### Added
+- **Passive shell tracking**: `gnb shell-init` now embeds tracking hooks that append command history to `~/.local/share/ganbatte/track.log` without spawning the gnb binary — zero latency impact
+  - zsh: `preexec_functions` + `precmd_functions`
+  - bash: `trap DEBUG` + `PROMPT_COMMAND`
+  - fish: `--on-event fish_postexec`
+- **`gnb suggest` — parameterized alias detection**: finds command groups with a shared N-token prefix and varying argument position, with three quality gates:
+  - Gate 1: subcommand discrimination — rejects positions where tokens follow the varying one
+  - Gate 2: argument-likeness — rejects when varying tokens look like subcommand keywords
+  - Gate 3: flag rejection — rejects groups where most varying tokens are flags
+- **`gnb suggest` — keystroke impact scoring**: suggestions sorted by `(len(cmd) - len(alias)) × frequency` instead of raw frequency
+- **`gnb suggest --from-history`**: force shell history source, skip track.log
+- **Universal alias collision prevention**: 20 ecosystem-claimed names (`gc`, `gs`, `gco`, `ll`, `k`, ...) excluded from name generation with automatic longer fallbacks
+- **Destructive command auto-confirm**: `rm`, `kill`, `git reset`, `git push --force`, etc. get `confirm = true` automatically on `--apply`
+- **Noise filter**: multi-line continuations (`\`), comments (`#`), all-punctuation strings, and commands under 4 chars are excluded from analysis
+- **Track log rotation**: `track.log` auto-rotates to `track.log.1` when it exceeds 10 MB
+- `internal/track` package: `LogPath()`, `Parse()`, `Count()` (XDG-aware, cheap line counter)
+
 ## [1.2.0] - 2026-04-17
 
 ### Added
