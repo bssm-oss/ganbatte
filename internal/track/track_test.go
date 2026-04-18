@@ -22,7 +22,7 @@ func TestLogPath_RespectsXDG(t *testing.T) {
 	t.Setenv("XDG_DATA_HOME", "/custom/data")
 	path, err := LogPath()
 	require.NoError(t, err)
-	assert.Equal(t, "/custom/data/ganbatte/track.log", path)
+	assert.Equal(t, filepath.Join("/custom/data", "ganbatte", "track.log"), path)
 }
 
 func TestParse_ValidLog(t *testing.T) {
