@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.1] - 2026-04-18
+
+### Added
+- `gnb suggest --apply` interactive mode: prompts `[y/N/q]` per suggestion, `q` quits immediately
+- `gnb doctor` now shows passive tracking status — entry count, how many more needed before `gnb suggest` uses track.log, and log path
+- Workflow names changed from initials-based (`wf-ga`) to readable `verb-noun` format (`git-add`, `npm-run`, `docker-build`)
+- 30-minute time-gap filter: ignores command sequences that span more than 30 minutes, eliminating cross-session false positives
+
+### Fixed
+- `TestLogPath_RespectsXDG` was failing on Windows due to hardcoded `/` path separator — now uses `filepath.Join`
+
 ## [1.3.0] - 2026-04-18
 
 ### Added
