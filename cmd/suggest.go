@@ -1,7 +1,10 @@
 package cmd
 
 import (
+	"bufio"
 	"fmt"
+	"os"
+	"strings"
 
 	"github.com/justn-hyeok/ganbatte/internal/config"
 	"github.com/justn-hyeok/ganbatte/internal/history"
@@ -114,58 +117,108 @@ Example:
 			return nil
 		}
 
+		scanner := bufio.NewScanner(os.Stdin)
 		applied := 0
 
-		for _, s := range aliasSugs {
+		applyAlias := func(s history.Suggestion) {
 			if cfg.Aliases == nil {
 				cfg.Aliases = make(map[string]config.Alias)
 			}
-			if _, exists := cfg.Aliases[s.Name]; !exists {
-				cfg.Aliases[s.Name] = config.Alias{Cmd: s.Command}
-				cmd.Printf("Added alias '%s' = %s\n", s.Name, s.Command)
-				applied++
+			if _, exists := cfg.Aliases[s.Name]; exists {
+				return
+			}
+			cfg.Aliases[s.Name] = config.Alias{
+				Cmd:     s.Command,
+				Params:  s.Params,
+				Confirm: s.Confirm,
+			}
+			confirmNote := ""
+			if s.Confirm {
+				confirmNote = " [confirm=true]"
+			}
+			if len(s.Params) > 0 {
+				cmd.Printf("  ✓ Added param-alias '%s'(%s) = %s%s\n", s.Name, s.Params[0], s.Command, confirmNote)
+			} else {
+				cmd.Printf("  ✓ Added alias '%s' = %s%s\n", s.Name, s.Command, confirmNote)
+			}
+			applied++
+		}
+
+		applyWorkflow := func(s history.Suggestion) {
+			if cfg.Workflows == nil {
+				cfg.Workflows = make(map[string]config.Workflow)
+			}
+			if _, exists := cfg.Workflows[s.Name]; exists {
+				return
+			}
+			steps := make([]config.Step, len(s.Steps))
+			for j, step := range s.Steps {
+				steps[j] = config.Step{Run: step}
+			}
+			cfg.Workflows[s.Name] = config.Workflow{
+				Description: s.Reason,
+				Steps:       steps,
+			}
+			cmd.Printf("  ✓ Added workflow '%s' (%d steps)\n", s.Name, len(s.Steps))
+			applied++
+		}
+
+		prompt := func(label string) bool {
+			fmt.Fprintf(cmd.OutOrStdout(), "Add %s? [y/N/q] ", label)
+			if !scanner.Scan() {
+				return false
+			}
+			ans := strings.ToLower(strings.TrimSpace(scanner.Text()))
+			if ans == "q" || ans == "quit" {
+				os.Exit(0)
+			}
+			return ans == "y" || ans == "yes"
+		}
+
+		cmd.Println("--- Interactive Apply (y/N/q to quit) ---")
+		cmd.Println()
+
+		for _, s := range aliasSugs {
+			if _, exists := cfg.Aliases[s.Name]; exists {
+				continue
+			}
+			label := fmt.Sprintf("alias '%s' = %s", s.Name, s.Command)
+			if s.Confirm {
+				label += " [destructive]"
+			}
+			if prompt(label) {
+				applyAlias(s)
 			}
 		}
 
 		for _, s := range paramSugs {
-			if cfg.Aliases == nil {
-				cfg.Aliases = make(map[string]config.Alias)
+			if _, exists := cfg.Aliases[s.Name]; exists {
+				continue
 			}
-			if _, exists := cfg.Aliases[s.Name]; !exists {
-				cfg.Aliases[s.Name] = config.Alias{
-					Cmd:    s.Command,
-					Params: s.Params,
-				}
-				cmd.Printf("Added param-alias '%s'(%s) = %s\n", s.Name, s.Params[0], s.Command)
-				applied++
+			label := fmt.Sprintf("param-alias '%s'(%s) → %s", s.Name, s.Params[0], s.Command)
+			if prompt(label) {
+				applyAlias(s)
 			}
 		}
 
 		for _, s := range wfSugs {
-			if cfg.Workflows == nil {
-				cfg.Workflows = make(map[string]config.Workflow)
+			if _, exists := cfg.Workflows[s.Name]; exists {
+				continue
 			}
-			if _, exists := cfg.Workflows[s.Name]; !exists {
-				steps := make([]config.Step, len(s.Steps))
-				for j, step := range s.Steps {
-					steps[j] = config.Step{Run: step}
-				}
-				cfg.Workflows[s.Name] = config.Workflow{
-					Description: s.Reason,
-					Steps:       steps,
-				}
-				cmd.Printf("Added workflow '%s' (%d steps)\n", s.Name, len(s.Steps))
-				applied++
+			label := fmt.Sprintf("workflow '%s' (%d steps: %s...)", s.Name, len(s.Steps), s.Steps[0])
+			if prompt(label) {
+				applyWorkflow(s)
 			}
 		}
 
+		cmd.Println()
 		if applied > 0 {
 			if err := cfg.Save(); err != nil {
 				return fmt.Errorf("saving config: %w", err)
 			}
-			cmd.Printf("\n%d item(s) applied to config\n", applied)
+			cmd.Printf("%d item(s) applied. Run 'eval \"$(gnb shell-init)\"' to activate.\n", applied)
 		} else {
-			cmd.Println("No new items to apply")
+			cmd.Println("Nothing applied.")
 		}
 
 		return nil

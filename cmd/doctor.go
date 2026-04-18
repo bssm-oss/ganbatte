@@ -7,6 +7,7 @@ import (
 
 	"github.com/justn-hyeok/ganbatte/internal/config"
 	"github.com/justn-hyeok/ganbatte/internal/shell"
+	"github.com/justn-hyeok/ganbatte/internal/track"
 	"github.com/spf13/cobra"
 )
 
@@ -103,6 +104,27 @@ var doctorCmd = &cobra.Command{
 					cmd.Printf("[WARN] Workflow '%s' has no steps\n", name)
 					issues++
 				}
+			}
+		}
+
+		// 6. Passive tracking (track.log)
+		cmd.Println()
+		cmd.Println("=== Passive Tracking ===")
+		logPath, err := track.LogPath()
+		if err != nil {
+			cmd.Printf("[WARN] Could not determine track.log path: %v\n", err)
+		} else {
+			n, _ := track.Count(logPath)
+			if n == 0 {
+				cmd.Printf("[INFO] track.log: empty (%s)\n", logPath)
+				cmd.Println("       Add 'eval \"$(gnb shell-init)\"' to your shell config to start tracking")
+			} else if n < trackMinEntries {
+				cmd.Printf("[INFO] track.log: %d entries (need %d more before 'gnb suggest' uses it)\n",
+					n, trackMinEntries-n)
+				cmd.Printf("       %s\n", logPath)
+			} else {
+				cmd.Printf("[OK] track.log: %d entries — 'gnb suggest' will use this\n", n)
+				cmd.Printf("     %s\n", logPath)
 			}
 		}
 

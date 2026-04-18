@@ -347,11 +347,14 @@ func suggestWorkflows(entries []Entry, opts SuggestOptions) []Suggestion {
 	}
 	sort.Slice(triples, func(i, j int) bool { return triples[i].count > triples[j].count })
 
+	usedWfNames := make(map[string]bool)
 	for _, tc := range triples {
 		steps := strings.Split(tc.seq, " && ")
+		name := workflowName(steps, usedWfNames)
+		usedWfNames[name] = true
 		suggestions = append(suggestions, Suggestion{
 			Type:   "workflow",
-			Name:   "wf-" + generateAliasName(steps[0]),
+			Name:   name,
 			Steps:  steps,
 			Reason: fmt.Sprintf("Sequence appeared %d times", tc.count),
 		})
@@ -367,9 +370,22 @@ func suggestWorkflows(entries []Entry, opts SuggestOptions) []Suggestion {
 
 	for _, pc := range pairs {
 		steps := strings.Split(pc.seq, " && ")
+		// skip pairs already covered by a triple with the same first two steps
+		covered := false
+		for _, s := range suggestions {
+			if len(s.Steps) >= 2 && s.Steps[0] == steps[0] && s.Steps[1] == steps[1] {
+				covered = true
+				break
+			}
+		}
+		if covered {
+			continue
+		}
+		name := workflowName(steps, usedWfNames)
+		usedWfNames[name] = true
 		suggestions = append(suggestions, Suggestion{
 			Type:   "workflow",
-			Name:   "wf-" + generateAliasName(steps[0]),
+			Name:   name,
 			Steps:  steps,
 			Reason: fmt.Sprintf("Pair appeared %d times", pc.count),
 		})
@@ -487,6 +503,80 @@ func generateAliasName(cmd string) string {
 		return "cmd"
 	}
 	return result
+}
+
+// workflowName generates a readable name from workflow steps.
+// Tries "verb-noun" from the first command, falls back to initials.
+// Ensures uniqueness within the used set.
+func workflowName(steps []string, used map[string]bool) string {
+	base := workflowBaseName(steps)
+	name := base
+	for i := 2; used[name]; i++ {
+		name = fmt.Sprintf("%s-%d", base, i)
+	}
+	return name
+}
+
+func workflowBaseName(steps []string) string {
+	if len(steps) == 0 {
+		return "workflow"
+	}
+	tokens := strings.Fields(steps[0])
+	if len(tokens) == 0 {
+		return "workflow"
+	}
+
+	// Known verb→short mappings
+	verbMap := map[string]string{
+		"git": "git", "npm": "npm", "pnpm": "pnpm", "yarn": "yarn",
+		"docker": "docker", "kubectl": "k8s", "make": "make",
+		"go": "go", "cargo": "cargo", "python3": "py", "python": "py",
+	}
+
+	verb := strings.ToLower(tokens[0])
+	prefix, ok := verbMap[verb]
+	if !ok {
+		// use first word directly if short enough
+		if len(verb) <= 6 {
+			prefix = verb
+		} else {
+			prefix = verb[:4]
+		}
+	}
+
+	// Pick a noun from the subcommand or second step
+	noun := ""
+	if len(tokens) >= 2 {
+		sub := strings.ToLower(strings.TrimLeft(tokens[1], "-"))
+		// only use if it looks like a subcommand (short, alphabetic)
+		if len(sub) >= 2 && len(sub) <= 8 && isAlpha(sub) {
+			noun = sub
+		}
+	}
+	// if no noun from first step, try key verb from second step
+	if noun == "" && len(steps) >= 2 {
+		t2 := strings.Fields(steps[1])
+		if len(t2) >= 2 {
+			sub := strings.ToLower(strings.TrimLeft(t2[1], "-"))
+			if len(sub) >= 2 && len(sub) <= 8 && isAlpha(sub) {
+				noun = sub
+			}
+		}
+	}
+
+	if noun != "" {
+		return prefix + "-" + noun
+	}
+	return prefix + "-flow"
+}
+
+func isAlpha(s string) bool {
+	for _, r := range s {
+		if r < 'a' || r > 'z' {
+			return false
+		}
+	}
+	return true
 }
 
 // paramNameForPrefix returns the best parameter name for a given command prefix.
