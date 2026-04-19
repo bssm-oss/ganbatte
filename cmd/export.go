@@ -20,6 +20,7 @@ Example:
 	RunE: func(cmd *cobra.Command, args []string) error {
 		output, _ := cmd.Flags().GetString("output")
 		format, _ := cmd.Flags().GetString("format")
+		aliasesOnly, _ := cmd.Flags().GetBool("aliases-only")
 
 		if output == "" {
 			return fmt.Errorf("--output flag is required")
@@ -35,8 +36,9 @@ Example:
 		}
 
 		data, err := config.Export(cfg, config.ExportOptions{
-			Names:  args,
-			Format: format,
+			Names:       args,
+			Format:      format,
+			AliasesOnly: aliasesOnly,
 		})
 		if err != nil {
 			return err
@@ -47,6 +49,9 @@ Example:
 		}
 
 		count := len(cfg.Aliases) + len(cfg.Workflows)
+		if aliasesOnly {
+			count = len(cfg.Aliases)
+		}
 		if len(args) > 0 {
 			count = len(args)
 		}
@@ -58,5 +63,6 @@ Example:
 func init() {
 	exportCmd.Flags().StringP("output", "o", "", "Output file path (required)")
 	exportCmd.Flags().StringP("format", "f", "toml", "Output format (toml, yaml, json)")
+	exportCmd.Flags().Bool("aliases-only", false, "Export only aliases, skip workflows")
 	RootCmd.AddCommand(exportCmd)
 }

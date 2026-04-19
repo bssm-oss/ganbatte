@@ -22,6 +22,7 @@ type Alias struct {
 	Params        []string          `mapstructure:"params"`
 	DefaultParams map[string]string `mapstructure:"default_params"`
 	Confirm       bool              `mapstructure:"confirm"`
+	Tags          []string          `mapstructure:"tags"`
 }
 
 // Workflow represents a sequence of steps

@@ -51,7 +51,7 @@
 
 ```bash
 # Homebrew (macOS / Linux)
-brew install justn-hyeok/tap/ganbatte
+brew install bssm-oss/tap/ganbatte
 
 # go install
 go install github.com/justn-hyeok/ganbatte@latest

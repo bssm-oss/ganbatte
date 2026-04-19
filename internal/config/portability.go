@@ -10,8 +10,9 @@ import (
 
 // ExportOptions configures export behavior.
 type ExportOptions struct {
-	Names  []string // empty = export all
-	Format string   // "toml", "yaml", "json"
+	Names       []string // empty = export all
+	Format      string   // "toml", "yaml", "json"
+	AliasesOnly bool     // export only aliases, skip workflows
 }
 
 // Export serializes selected aliases/workflows into a config file content.
@@ -30,7 +31,9 @@ func Export(cfg *Config, opts ExportOptions) ([]byte, error) {
 
 	if len(opts.Names) == 0 {
 		subset.Aliases = cfg.Aliases
-		subset.Workflows = cfg.Workflows
+		if !opts.AliasesOnly {
+			subset.Workflows = cfg.Workflows
+		}
 	} else {
 		for _, name := range opts.Names {
 			if alias, ok := cfg.Aliases[name]; ok {

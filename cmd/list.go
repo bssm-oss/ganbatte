@@ -39,7 +39,7 @@ Example:
 		cmd.Println("=== Aliases ===")
 		aliasCount := 0
 		for name, alias := range cfg.Aliases {
-			if tagFilter != "" {
+			if tagFilter != "" && !containsTag(alias.Tags, tagFilter) {
 				continue
 			}
 			scope := scopeLabel(name, scoped, "alias", hasProject)
