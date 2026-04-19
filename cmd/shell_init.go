@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 	"sort"
 	"strings"
 
@@ -44,7 +45,7 @@ Example:
 		}
 
 		output := generateShellInit(cfg, sh)
-		cmd.Print(output)
+		fmt.Fprint(os.Stdout, output)
 		return nil
 	},
 }
