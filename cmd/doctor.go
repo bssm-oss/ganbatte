@@ -136,8 +136,6 @@ var doctorCmd = &cobra.Command{
 			cmd.Println("=== Shell Integration ===")
 			if checkP10kOrdering(cmd, home, fix) {
 				issues++
-			} else if !fix {
-				cmd.Println("[OK] shell-init: p10k ordering OK")
 			}
 		}
 
@@ -155,8 +153,57 @@ var doctorCmd = &cobra.Command{
 	},
 }
 
+// findShellInitLines returns 0-indexed line numbers of the p10k instant prompt preamble
+// and the gnb shell-init eval line. Returns -1 for each if not found.
+// Commented-out lines (trimmed prefix "#") are ignored.
+func findShellInitLines(lines []string) (p10kLine, gnbLine int) {
+	p10kLine, gnbLine = -1, -1
+	for i, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, "#") {
+			continue
+		}
+		if p10kLine == -1 && strings.Contains(line, "p10k-instant-prompt-") {
+			p10kLine = i
+		}
+		if gnbLine == -1 && strings.Contains(line, "gnb shell-init") {
+			gnbLine = i
+		}
+	}
+	return
+}
+
+// applyP10kFix returns a new lines slice with the gnb shell-init line moved to just
+// before the p10k instant prompt block (including its preceding comment lines).
+// A blank line immediately before the gnb line is removed to avoid leftover whitespace.
+func applyP10kFix(lines []string, gnbLine, p10kLine int) []string {
+	gnbContent := lines[gnbLine]
+
+	// Remove gnb line; also remove a preceding blank line to avoid leftover whitespace
+	start := gnbLine
+	if start > 0 && strings.TrimSpace(lines[start-1]) == "" {
+		start--
+	}
+	fixed := make([]string, 0, len(lines)-1)
+	fixed = append(fixed, lines[:start]...)
+	fixed = append(fixed, lines[gnbLine+1:]...)
+
+	// Walk back from p10kLine through consecutive comment lines to find block start.
+	// p10kLine index is still valid because gnbLine > p10kLine (we only removed lines after it).
+	insertAt := p10kLine
+	for insertAt > 0 && strings.HasPrefix(strings.TrimSpace(fixed[insertAt-1]), "#") {
+		insertAt--
+	}
+
+	result := make([]string, 0, len(fixed)+2)
+	result = append(result, fixed[:insertAt]...)
+	result = append(result, gnbContent, "")
+	result = append(result, fixed[insertAt:]...)
+	return result
+}
+
 // checkP10kOrdering detects and optionally fixes p10k instant prompt ordering in ~/.zshrc.
-// Returns true if an unfixed issue remains.
+// Only prints output when p10k is detected. Returns true if an unfixed issue remains.
 func checkP10kOrdering(cmd *cobra.Command, home string, fix bool) bool {
 	zshrc := filepath.Join(home, ".zshrc")
 	data, err := os.ReadFile(zshrc)
@@ -165,19 +212,14 @@ func checkP10kOrdering(cmd *cobra.Command, home string, fix bool) bool {
 	}
 
 	lines := strings.Split(string(data), "\n")
+	p10kLine, gnbLine := findShellInitLines(lines)
 
-	p10kLine := -1
-	gnbLine := -1
-	for i, line := range lines {
-		if p10kLine == -1 && strings.Contains(line, "p10k-instant-prompt-") {
-			p10kLine = i
-		}
-		if gnbLine == -1 && strings.Contains(line, "gnb shell-init") {
-			gnbLine = i
-		}
+	if p10kLine == -1 || gnbLine == -1 {
+		return false // p10k or shell-init not configured — nothing to check
 	}
 
-	if p10kLine == -1 || gnbLine == -1 || gnbLine < p10kLine {
+	if gnbLine < p10kLine {
+		cmd.Println("[OK] shell-init: before p10k instant prompt preamble")
 		return false
 	}
 
@@ -189,25 +231,7 @@ func checkP10kOrdering(cmd *cobra.Command, home string, fix bool) bool {
 		return true
 	}
 
-	gnbContent := lines[gnbLine]
-
-	// Remove gnb line (gnbLine > p10kLine so p10kLine index is unaffected)
-	fixed := make([]string, 0, len(lines)-1)
-	fixed = append(fixed, lines[:gnbLine]...)
-	fixed = append(fixed, lines[gnbLine+1:]...)
-
-	// Walk back from p10kLine through comment lines to find block start
-	insertAt := p10kLine
-	for insertAt > 0 && strings.HasPrefix(strings.TrimSpace(fixed[insertAt-1]), "#") {
-		insertAt--
-	}
-
-	// Insert gnb line + blank line before the p10k block
-	result := make([]string, 0, len(fixed)+2)
-	result = append(result, fixed[:insertAt]...)
-	result = append(result, gnbContent, "")
-	result = append(result, fixed[insertAt:]...)
-
+	result := applyP10kFix(lines, gnbLine, p10kLine)
 	if err := os.WriteFile(zshrc, []byte(strings.Join(result, "\n")), 0644); err != nil {
 		cmd.Printf("[ERROR] Could not write %s: %v\n", zshrc, err)
 		return true
