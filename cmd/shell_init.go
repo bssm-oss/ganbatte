@@ -24,6 +24,9 @@ Add this to your shell config:
   # fish
   gnb shell-init | source
 
+Powerlevel10k users: place the eval line BEFORE the instant prompt preamble
+in ~/.zshrc, or run 'gnb doctor --fix' to reorder automatically.
+
 Example:
   gnb shell-init
   gnb shell-init --shell fish`,

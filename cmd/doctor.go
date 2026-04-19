@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/justn-hyeok/ganbatte/internal/config"
 	"github.com/justn-hyeok/ganbatte/internal/shell"
@@ -17,6 +18,7 @@ var doctorCmd = &cobra.Command{
 	Short: "Diagnose configuration and environment",
 	Long:  `Check configuration validity, shell integration status, and report issues.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		fix, _ := cmd.Flags().GetBool("fix")
 		issues := 0
 
 		// 1. Shell detection
@@ -128,17 +130,93 @@ var doctorCmd = &cobra.Command{
 			}
 		}
 
+		// 7. p10k instant prompt ordering (zsh only)
+		if sh == "zsh" {
+			cmd.Println()
+			cmd.Println("=== Shell Integration ===")
+			if checkP10kOrdering(cmd, home, fix) {
+				issues++
+			} else if !fix {
+				cmd.Println("[OK] shell-init: p10k ordering OK")
+			}
+		}
+
 		// Summary
 		cmd.Println()
 		if issues == 0 {
 			cmd.Println("No issues found. ganbatte!")
 		} else {
 			cmd.Printf("%d issue(s) found\n", issues)
+			if !fix {
+				cmd.Println("Run 'gnb doctor --fix' to automatically fix repairable issues")
+			}
 		}
 		return nil
 	},
 }
 
+// checkP10kOrdering detects and optionally fixes p10k instant prompt ordering in ~/.zshrc.
+// Returns true if an unfixed issue remains.
+func checkP10kOrdering(cmd *cobra.Command, home string, fix bool) bool {
+	zshrc := filepath.Join(home, ".zshrc")
+	data, err := os.ReadFile(zshrc)
+	if err != nil {
+		return false
+	}
+
+	lines := strings.Split(string(data), "\n")
+
+	p10kLine := -1
+	gnbLine := -1
+	for i, line := range lines {
+		if p10kLine == -1 && strings.Contains(line, "p10k-instant-prompt-") {
+			p10kLine = i
+		}
+		if gnbLine == -1 && strings.Contains(line, "gnb shell-init") {
+			gnbLine = i
+		}
+	}
+
+	if p10kLine == -1 || gnbLine == -1 || gnbLine < p10kLine {
+		return false
+	}
+
+	cmd.Printf("[WARN] shell-init is after p10k instant prompt preamble (line %d vs %d)\n", gnbLine+1, p10kLine+1)
+	cmd.Println("       This causes a warning on every zsh start")
+
+	if !fix {
+		cmd.Println("       Run 'gnb doctor --fix' to automatically reorder")
+		return true
+	}
+
+	gnbContent := lines[gnbLine]
+
+	// Remove gnb line (gnbLine > p10kLine so p10kLine index is unaffected)
+	fixed := make([]string, 0, len(lines)-1)
+	fixed = append(fixed, lines[:gnbLine]...)
+	fixed = append(fixed, lines[gnbLine+1:]...)
+
+	// Walk back from p10kLine through comment lines to find block start
+	insertAt := p10kLine
+	for insertAt > 0 && strings.HasPrefix(strings.TrimSpace(fixed[insertAt-1]), "#") {
+		insertAt--
+	}
+
+	// Insert gnb line + blank line before the p10k block
+	result := make([]string, 0, len(fixed)+2)
+	result = append(result, fixed[:insertAt]...)
+	result = append(result, gnbContent, "")
+	result = append(result, fixed[insertAt:]...)
+
+	if err := os.WriteFile(zshrc, []byte(strings.Join(result, "\n")), 0644); err != nil {
+		cmd.Printf("[ERROR] Could not write %s: %v\n", zshrc, err)
+		return true
+	}
+	cmd.Printf("[FIXED] Moved eval line before p10k preamble in %s\n", zshrc)
+	return false
+}
+
 func init() {
+	doctorCmd.Flags().Bool("fix", false, "Automatically fix detected issues")
 	RootCmd.AddCommand(doctorCmd)
 }
