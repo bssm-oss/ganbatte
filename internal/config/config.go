@@ -52,48 +52,40 @@ func NewViper() *viper.Viper {
 }
 
 // Load 설정 파일을 로드하고 기본값을 설정합니다.
-// global 및 project scope를 모두 고려하여 설정을 로드합니다.
+// detectGlobalConfig 와 동일한 우선순위(toml > yaml > yml > json)로 파일을 선택하므로
+// 여러 형식의 파일이 동시에 존재해도 일관된 파일을 읽습니다.
 func Load() (*Config, error) {
-	v := viper.New()
-
-	// 환경 변수 자동 바인딩
-	v.AutomaticEnv()
-
-	// 설정 파일 이름 설정 (확장자 없이)
-	v.SetConfigName("config")
-
-	// 홈 디렉토리에서 global 설정 파일 경로
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return nil, fmt.Errorf("getting home directory: %w", err)
 	}
+
 	globalConfigPath := filepath.Join(home, ".config", "ganbatte")
-	v.AddConfigPath(globalConfigPath)
+	configFile, format := detectGlobalConfig(globalConfigPath)
 
-	// 현재 디렉토리에서 project 설정 파일 경로 (상위 디렉토리도 탐색)
-	v.AddConfigPath(".")
+	if _, err := os.Stat(configFile); err != nil {
+		return &Config{
+			Version:   "0.1.0",
+			Global:    true,
+			Aliases:   make(map[string]Alias),
+			Workflows: make(map[string]Workflow),
+		}, nil
+	}
 
-	// 설정 파일 읽기
+	v := viper.New()
+	v.AutomaticEnv()
+	v.SetConfigFile(configFile)
+	v.SetConfigType(format)
+
 	if err := v.ReadInConfig(); err != nil {
-		// 설정 파일이 없는 경우 빈 설정 반환
-		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			return &Config{
-				Version:   "0.1.0",
-				Global:    true,
-				Aliases:   make(map[string]Alias),
-				Workflows: make(map[string]Workflow),
-			}, nil
-		}
 		return nil, fmt.Errorf("reading config: %w", err)
 	}
 
-	// 설정 구조체로 디코딩
 	var cfg Config
 	if err := v.Unmarshal(&cfg); err != nil {
 		return nil, fmt.Errorf("unmarshaling config: %w", err)
 	}
 
-	// 기본값 설정
 	if cfg.Version == "" {
 		cfg.Version = "0.1.0"
 	}
@@ -109,27 +101,29 @@ func Load() (*Config, error) {
 
 // LoadWithMeta loads config and returns metadata about the loaded file.
 func LoadWithMeta() (*Config, *LoadMeta, error) {
-	v := viper.New()
-	v.AutomaticEnv()
-	v.SetConfigName("config")
-
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return nil, nil, fmt.Errorf("getting home directory: %w", err)
 	}
+
 	globalConfigPath := filepath.Join(home, ".config", "ganbatte")
-	v.AddConfigPath(globalConfigPath)
-	v.AddConfigPath(".")
+	configFile, format := detectGlobalConfig(globalConfigPath)
+
+	if _, err := os.Stat(configFile); err != nil {
+		return &Config{
+			Version:   "0.1.0",
+			Global:    true,
+			Aliases:   make(map[string]Alias),
+			Workflows: make(map[string]Workflow),
+		}, nil, nil
+	}
+
+	v := viper.New()
+	v.AutomaticEnv()
+	v.SetConfigFile(configFile)
+	v.SetConfigType(format)
 
 	if err := v.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			return &Config{
-				Version:   "0.1.0",
-				Global:    true,
-				Aliases:   make(map[string]Alias),
-				Workflows: make(map[string]Workflow),
-			}, nil, nil
-		}
 		return nil, nil, fmt.Errorf("reading config: %w", err)
 	}
 
@@ -148,23 +142,7 @@ func LoadWithMeta() (*Config, *LoadMeta, error) {
 		cfg.Workflows = make(map[string]Workflow)
 	}
 
-	filePath := v.ConfigFileUsed()
-	format := ""
-	switch {
-	case filepath.Ext(filePath) == ".toml":
-		format = "toml"
-	case filepath.Ext(filePath) == ".yaml" || filepath.Ext(filePath) == ".yml":
-		format = "yaml"
-	case filepath.Ext(filePath) == ".json":
-		format = "json"
-	}
-
-	meta := &LoadMeta{
-		FilePath: filePath,
-		Format:   format,
-	}
-
-	return &cfg, meta, nil
+	return &cfg, &LoadMeta{FilePath: configFile, Format: format}, nil
 }
 
 // SaveGlobal 글로벌 설정 파일에 강제로 저장합니다.

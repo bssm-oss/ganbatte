@@ -49,19 +49,34 @@ var doctorCmd = &cobra.Command{
 		}
 
 		configDir := filepath.Join(home, ".config", "ganbatte")
-		configFound := false
+		var foundConfigs []string
 		for _, ext := range []string{"toml", "yaml", "yml", "json"} {
 			p := filepath.Join(configDir, "config."+ext)
 			if _, err := os.Stat(p); err == nil {
-				cmd.Printf("[OK] Global config: %s\n", p)
-				configFound = true
-				break
+				foundConfigs = append(foundConfigs, p)
 			}
 		}
-		if !configFound {
+		switch len(foundConfigs) {
+		case 0:
 			cmd.Printf("[WARN] No global config found in %s\n", configDir)
 			cmd.Println("       Run 'gnb init' to create one")
 			issues++
+		case 1:
+			cmd.Printf("[OK] Global config: %s\n", foundConfigs[0])
+		default:
+			cmd.Printf("[WARN] Multiple config files found — only %s is used\n", foundConfigs[0])
+			for _, p := range foundConfigs[1:] {
+				cmd.Printf("       ignored: %s\n", p)
+			}
+			if fix {
+				for _, p := range foundConfigs[1:] {
+					os.Remove(p)
+					cmd.Printf("[FIXED] Removed %s\n", p)
+				}
+			} else {
+				cmd.Println("       Run 'gnb doctor --fix' to remove ignored files")
+				issues++
+			}
 		}
 
 		// 4. Project config
