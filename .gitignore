@@ -1,6 +1,9 @@
 # Binaries
 gnb
 
+# Build output
+dist/
+
 # Test/coverage output
 *.out
 
