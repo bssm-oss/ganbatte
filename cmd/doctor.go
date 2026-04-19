@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -116,6 +117,14 @@ var doctorCmd = &cobra.Command{
 					issues++
 				}
 			}
+
+			// Check for alias names shadowing system commands
+			for name := range cfg.Aliases {
+				if path, err := exec.LookPath(name); err == nil {
+					cmd.Printf("[WARN] Alias '%s' shadows system command: %s\n", name, path)
+					issues++
+				}
+			}
 			for name, wf := range cfg.Workflows {
 				if len(wf.Steps) == 0 {
 					cmd.Printf("[WARN] Workflow '%s' has no steps\n", name)
@@ -151,6 +160,21 @@ var doctorCmd = &cobra.Command{
 			cmd.Println("=== Shell Integration ===")
 			if checkP10kOrdering(cmd, home, fix) {
 				issues++
+			} else {
+				p10kPresent := func() bool {
+					data, err := os.ReadFile(filepath.Join(home, ".zshrc"))
+					if err != nil {
+						return false
+					}
+					lines := strings.Split(string(data), "\n")
+					p10k, _ := findShellInitLines(lines)
+					return p10k != -1
+				}()
+				if p10kPresent {
+					cmd.Println("[OK] shell-init: before p10k instant prompt preamble")
+				} else {
+					cmd.Println("[OK] shell-init: no p10k detected")
+				}
 			}
 		}
 
@@ -234,7 +258,6 @@ func checkP10kOrdering(cmd *cobra.Command, home string, fix bool) bool {
 	}
 
 	if gnbLine < p10kLine {
-		cmd.Println("[OK] shell-init: before p10k instant prompt preamble")
 		return false
 	}
 
