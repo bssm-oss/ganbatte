@@ -19,10 +19,11 @@ Example:
 	RunE: func(cmd *cobra.Command, args []string) error {
 		name := args[0]
 
-		cfg, err := config.Load()
+		scoped, err := config.LoadScoped()
 		if err != nil {
 			return fmt.Errorf("loading config: %w", err)
 		}
+		cfg := scoped.Merged
 
 		if alias, exists := cfg.Aliases[name]; exists {
 			cmd.Printf("Alias: %s\n", name)

@@ -3,6 +3,7 @@ package cmd
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -27,10 +28,11 @@ Example:
 		runArgs := args[1:]
 		dryRun, _ := cmd.Flags().GetBool("dry-run")
 
-		cfg, err := config.Load()
+		scoped, err := config.LoadScoped()
 		if err != nil {
 			return fmt.Errorf("loading config: %w", err)
 		}
+		cfg := scoped.Merged
 
 		yes, _ := cmd.Flags().GetBool("yes")
 
@@ -50,16 +52,12 @@ Example:
 			}
 
 			if alias.Confirm && !yes {
-				fmt.Fprintf(cmd.OutOrStdout(), "⚠ Run \"%s\"? [y/N] ", resolved)
-				scanner := bufio.NewScanner(os.Stdin)
-				if scanner.Scan() {
-					input := strings.TrimSpace(strings.ToLower(scanner.Text()))
-					if input != "y" && input != "yes" {
-						cmd.Println("Cancelled")
-						return nil
-					}
-				} else {
-					cmd.Println("Cancelled (no input)")
+				if !confirmRun(cmd, fmt.Sprintf("⚠ Run %q? [y/N] ", resolved)) {
+					return nil
+				}
+			}
+			if projectOverrides(scoped, name, "alias") && !yes {
+				if !confirmRun(cmd, fmt.Sprintf("Project alias '%s' overrides a global alias. Continue? [y/N] ", name)) {
 					return nil
 				}
 			}
@@ -71,6 +69,11 @@ Example:
 
 		// Check if it's a workflow
 		if wfDef, exists := cfg.Workflows[name]; exists {
+			if projectOverrides(scoped, name, "workflow") && !yes && !dryRun {
+				if !confirmRun(cmd, fmt.Sprintf("Project workflow '%s' overrides a global workflow. Continue? [y/N] ", name)) {
+					return nil
+				}
+			}
 			wf := workflow.Workflow{
 				Description: wfDef.Description,
 				Params:      wfDef.Params,
@@ -91,13 +94,51 @@ Example:
 			}
 
 			return workflow.Run(wf, runArgs, &workflow.RealExecutor{}, workflow.RunOptions{
-				DryRun: dryRun,
-				Writer: cmd.OutOrStdout(),
+				DryRun:      dryRun,
+				SkipConfirm: yes,
+				Writer:      cmd.OutOrStdout(),
 			})
 		}
 
 		return fmt.Errorf("alias or workflow '%s' not found", name)
 	},
+}
+
+func projectOverrides(scoped *config.ScopedConfig, name, itemType string) bool {
+	if scoped.Global == nil || scoped.Project == nil {
+		return false
+	}
+	switch itemType {
+	case "alias":
+		_, inGlobal := scoped.Global.Aliases[name]
+		_, inProject := scoped.Project.Aliases[name]
+		return inGlobal && inProject
+	case "workflow":
+		_, inGlobal := scoped.Global.Workflows[name]
+		_, inProject := scoped.Project.Workflows[name]
+		return inGlobal && inProject
+	default:
+		return false
+	}
+}
+
+func confirmRun(cmd *cobra.Command, prompt string) bool {
+	return confirmPrompt(cmd.OutOrStdout(), prompt)
+}
+
+func confirmPrompt(w io.Writer, prompt string) bool {
+	fmt.Fprint(w, prompt)
+	scanner := bufio.NewScanner(os.Stdin)
+	if scanner.Scan() {
+		input := strings.TrimSpace(strings.ToLower(scanner.Text()))
+		if input == "y" || input == "yes" {
+			return true
+		}
+		fmt.Fprintln(w, "Cancelled")
+		return false
+	}
+	fmt.Fprintln(w, "Cancelled (no input)")
+	return false
 }
 
 // resolveAliasCmd substitutes parameters in alias command string.

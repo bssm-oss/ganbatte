@@ -1,11 +1,9 @@
 package cmd
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 	"os/exec"
-	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
@@ -51,7 +49,7 @@ var RootCmd = &cobra.Command{
 
 		switch result.SelectedAction {
 		case tui.ActionRun:
-			return handleRun(item)
+			return handleRun(scoped, item)
 		case tui.ActionEdit:
 			return handleEdit(cfg, item)
 		case tui.ActionDelete:
@@ -62,20 +60,16 @@ var RootCmd = &cobra.Command{
 	},
 }
 
-func handleRun(item *tui.Item) error {
+func handleRun(scoped *config.ScopedConfig, item *tui.Item) error {
 	switch item.Type {
 	case tui.AliasItem:
+		if projectOverrides(scoped, item.Name, "alias") {
+			if !confirmPrompt(os.Stdout, fmt.Sprintf("Project alias '%s' overrides a global alias. Continue? [y/N] ", item.Name)) {
+				return nil
+			}
+		}
 		if item.Confirm {
-			fmt.Fprintf(os.Stdout, "⚠ Run \"%s\"? [y/N] ", item.Command)
-			scanner := bufio.NewScanner(os.Stdin)
-			if scanner.Scan() {
-				input := strings.TrimSpace(strings.ToLower(scanner.Text()))
-				if input != "y" && input != "yes" {
-					fmt.Fprintln(os.Stdout, "Cancelled")
-					return nil
-				}
-			} else {
-				fmt.Fprintln(os.Stdout, "Cancelled (no input)")
+			if !confirmPrompt(os.Stdout, fmt.Sprintf("⚠ Run %q? [y/N] ", item.Command)) {
 				return nil
 			}
 		}
@@ -83,6 +77,11 @@ func handleRun(item *tui.Item) error {
 		ex := &workflow.RealExecutor{}
 		return ex.Execute(item.Command)
 	case tui.WorkflowItem:
+		if projectOverrides(scoped, item.Name, "workflow") {
+			if !confirmPrompt(os.Stdout, fmt.Sprintf("Project workflow '%s' overrides a global workflow. Continue? [y/N] ", item.Name)) {
+				return nil
+			}
+		}
 		fmt.Fprintf(os.Stdout, "Running workflow: %s\n", item.Description)
 		wf := workflow.Workflow{
 			Description: item.Description,
