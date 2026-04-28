@@ -2,6 +2,53 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Added
+- `gnb list --scope global|project` for inspecting one config scope at a time.
+- Project config discovery now walks parent directories, so `.ganbatte.*` works from nested repo paths.
+
+### Fixed
+- `gnb run` and `gnb show` now use merged global/project config, matching `gnb list` behavior.
+- `gnb run` now asks for confirmation when a project item overrides a global item unless `--yes` is used.
+- Release workflow now passes the Homebrew tap token using the environment variable expected by GoReleaser.
+- Release workflow now validates manual dispatch tags and runs tests before publishing tokens are injected.
+- CI lint issues reported by golangci-lint v1.64.8.
+
+## [1.5.3] - 2026-04-19
+
+### Added
+- `gnb doctor` detects aliases that collide with system commands and reports actionable shell-integration guidance.
+
+### Fixed
+- Shell Integration diagnostics now produce clearer output and avoid stale p10k guidance.
+
+## [1.5.2] - 2026-04-19
+
+### Fixed
+- `gnb shell-init` writes generated shell functions to stdout when executed through the root command.
+
+## [1.5.1] - 2026-04-19
+
+### Fixed
+- `gnb shell-init` output stream handling for shell eval usage.
+
+## [1.5.0] - 2026-04-19
+
+### Fixed
+- Config loading now warns and consistently picks one active file when multiple format files coexist.
+- `doctor --fix` p10k handling avoids false positives and cleans up leftover blank lines.
+
+### Added
+- `doctor --fix` can repair p10k instant prompt ordering for shell-init lines.
+
+## [1.4.2] - 2026-04-18
+
+### Fixed
+- Alias tag filtering behavior.
+- `gnb export --aliases-only` output.
+- Homebrew tap repository path in release configuration.
+
 ## [1.4.1] - 2026-04-18
 
 ### Added

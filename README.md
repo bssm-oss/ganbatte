@@ -50,10 +50,10 @@
 ## Install
 
 ```bash
-# Homebrew (macOS / Linux)
-brew install bssm-oss/tap/ganbatte
+# Homebrew Cask (macOS)
+brew install --cask bssm-oss/tap/ganbatte
 
-# go install
+# Go install (macOS / Linux)
 go install github.com/justn-hyeok/ganbatte@latest
 
 # 로컬 빌드

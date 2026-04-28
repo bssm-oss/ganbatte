@@ -2,11 +2,6 @@ version: 2
 
 project_name: ganbatte
 
-before:
-  hooks:
-    - go mod tidy
-    - go test ./...
-
 builds:
   - binary: gnb
     env:
@@ -22,24 +17,31 @@ builds:
       - -s -w
 
 archives:
-  - format: tar.gz
+  - formats: [tar.gz]
     name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
     format_overrides:
       - goos: windows
-        format: zip
+        formats: [zip]
 
-brews:
+homebrew_casks:
   - repository:
       owner: bssm-oss
       name: homebrew-tap
       token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    binaries:
+      - gnb
     homepage: https://github.com/bssm-oss/ganbatte
     description: "Workflow/shortcut management CLI for lazy developers"
-    license: MIT
-    install: |
-      bin.install "gnb"
-    test: |
-      system "#{bin}/gnb", "--help"
+    directory: Casks
+    generate_completions_from_executable:
+      executable: "bin/gnb"
+      args:
+        - completion
+      shell_parameter_format: cobra
+      shells:
+        - bash
+        - zsh
+        - fish
 
 checksum:
   name_template: checksums.txt

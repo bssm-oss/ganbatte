@@ -219,6 +219,26 @@ func TestWorkflowRun_ConfirmNo(t *testing.T) {
 	assert.Contains(t, outBuf.String(), "Skipped")
 }
 
+func TestWorkflowRun_SkipConfirm(t *testing.T) {
+	wf := Workflow{
+		Steps: []Step{
+			{Run: "echo dangerous", Confirm: true},
+		},
+	}
+
+	outBuf := new(bytes.Buffer)
+	executor := &MockExecutor{}
+
+	err := Run(wf, []string{}, executor, RunOptions{
+		SkipConfirm: true,
+		Writer:      outBuf,
+	})
+
+	assert.NoError(t, err)
+	assert.Equal(t, []string{"echo dangerous"}, executor.ExecuteCalls)
+	assert.NotContains(t, outBuf.String(), "Run 'echo dangerous'?")
+}
+
 func TestWorkflowRun_OnFailPrompt_Continue(t *testing.T) {
 	mock := &MockExecutor{
 		ExecuteFunc: func(cmd string) error {

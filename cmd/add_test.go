@@ -7,6 +7,7 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/justn-hyeok/ganbatte/internal/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -22,6 +23,7 @@ func executeCmd(args ...string) (string, error) {
 	_ = runCmd.Flags().Set("dry-run", "false")
 	_ = runCmd.Flags().Set("yes", "false")
 	_ = listCmd.Flags().Set("tag", "")
+	_ = listCmd.Flags().Set("scope", "")
 	_ = suggestCmd.Flags().Set("apply", "false")
 	_ = suggestCmd.Flags().Set("min-frequency", "5")
 	_ = suggestCmd.Flags().Set("min-sequence", "3")
@@ -265,6 +267,89 @@ run = "pnpm build"
 	assert.NotContains(t, out, "deploy")
 }
 
+func TestListScopeFilter(t *testing.T) {
+	home := setupTestHome(t)
+	projectDir := t.TempDir()
+	t.Chdir(projectDir)
+
+	configDir := filepath.Join(home, ".config", "ganbatte")
+	require.NoError(t, os.MkdirAll(configDir, 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(configDir, "config.toml"), []byte(`
+version = "0.1.0"
+[alias.global]
+cmd = "echo global"
+`), 0o644))
+	require.NoError(t, os.WriteFile(filepath.Join(projectDir, ".ganbatte.toml"), []byte(`
+version = "0.1.0"
+[alias.project]
+cmd = "echo project"
+`), 0o644))
+
+	out, err := executeCmd("list", "--scope", "global")
+	require.NoError(t, err)
+	assert.Contains(t, out, "global")
+	assert.NotContains(t, out, "project")
+
+	out, err = executeCmd("list", "--scope", "project")
+	require.NoError(t, err)
+	assert.Contains(t, out, "project")
+	assert.NotContains(t, out, "global")
+}
+
+func TestListScopeFilterConflictLabels(t *testing.T) {
+	home := setupTestHome(t)
+	projectDir := t.TempDir()
+	t.Chdir(projectDir)
+
+	configDir := filepath.Join(home, ".config", "ganbatte")
+	require.NoError(t, os.MkdirAll(configDir, 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(configDir, "config.toml"), []byte(`
+version = "0.1.0"
+[alias.shared]
+cmd = "echo global"
+`), 0o644))
+	require.NoError(t, os.WriteFile(filepath.Join(projectDir, ".ganbatte.toml"), []byte(`
+version = "0.1.0"
+[alias.shared]
+cmd = "echo project"
+`), 0o644))
+
+	out, err := executeCmd("list", "--scope", "global")
+	require.NoError(t, err)
+	assert.Contains(t, out, "shared: echo global [global]")
+	assert.NotContains(t, out, "[project]")
+
+	out, err = executeCmd("list", "--scope", "project")
+	require.NoError(t, err)
+	assert.Contains(t, out, "shared: echo project [project]")
+}
+
+func TestProjectOverrides(t *testing.T) {
+	scoped := &config.ScopedConfig{
+		Global: &config.Config{
+			Aliases:   map[string]config.Alias{"shared": {Cmd: "echo global"}},
+			Workflows: map[string]config.Workflow{"deploy": {Description: "global"}},
+		},
+		Project: &config.Config{
+			Aliases:   map[string]config.Alias{"shared": {Cmd: "echo project"}},
+			Workflows: map[string]config.Workflow{"deploy": {Description: "project"}},
+		},
+	}
+
+	assert.True(t, projectOverrides(scoped, "shared", "alias"))
+	assert.True(t, projectOverrides(scoped, "deploy", "workflow"))
+	assert.False(t, projectOverrides(scoped, "missing", "alias"))
+}
+
+func TestListInvalidScope(t *testing.T) {
+	setupTestHome(t)
+	_, _ = executeCmd("init", "--format", "toml")
+
+	_, err := executeCmd("list", "--scope", "local")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid scope")
+}
+
 func TestShowWorkflow(t *testing.T) {
 	home := setupTestHome(t)
 
@@ -317,6 +402,64 @@ confirm = true
 	assert.Contains(t, out, "echo building")
 	assert.Contains(t, out, "[DESTRUCTIVE]")
 	assert.Contains(t, out, "git push -f origin main")
+}
+
+func TestRunWorkflowYesSkipsConfirm(t *testing.T) {
+	home := setupTestHome(t)
+
+	configDir := filepath.Join(home, ".config", "ganbatte")
+	require.NoError(t, os.MkdirAll(configDir, 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(configDir, "config.toml"), []byte(`
+version = "0.1.0"
+[workflow.deploy]
+description = "Deploy"
+[[workflow.deploy.steps]]
+run = "printf deploy"
+confirm = true
+`), 0o644))
+
+	out, err := executeCmd("run", "deploy", "--yes")
+	require.NoError(t, err)
+	assert.Contains(t, out, "Running workflow: Deploy")
+	assert.Contains(t, out, "Step 1/1: printf deploy")
+	assert.NotContains(t, out, "Run 'printf deploy'?")
+}
+
+func TestRunProjectAliasFromParentDir(t *testing.T) {
+	setupTestHome(t)
+	projectRoot := t.TempDir()
+	nestedDir := filepath.Join(projectRoot, "sub", "dir")
+	require.NoError(t, os.MkdirAll(nestedDir, 0o755))
+	require.NoError(t, os.MkdirAll(filepath.Join(projectRoot, ".git"), 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(projectRoot, ".ganbatte.toml"), []byte(`
+version = "0.1.0"
+[alias.project]
+cmd = "printf project"
+`), 0o644))
+	t.Chdir(nestedDir)
+
+	out, err := executeCmd("run", "project")
+	require.NoError(t, err)
+	assert.Contains(t, out, "Running: printf project")
+}
+
+func TestShowProjectAliasFromParentDir(t *testing.T) {
+	setupTestHome(t)
+	projectRoot := t.TempDir()
+	nestedDir := filepath.Join(projectRoot, "sub", "dir")
+	require.NoError(t, os.MkdirAll(nestedDir, 0o755))
+	require.NoError(t, os.MkdirAll(filepath.Join(projectRoot, ".git"), 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(projectRoot, ".ganbatte.toml"), []byte(`
+version = "0.1.0"
+[alias.project]
+cmd = "echo project"
+`), 0o644))
+	t.Chdir(nestedDir)
+
+	out, err := executeCmd("show", "project")
+	require.NoError(t, err)
+	assert.Contains(t, out, "Alias: project")
+	assert.Contains(t, out, "Command: echo project")
 }
 
 func TestAddGlobalFlag(t *testing.T) {

@@ -42,9 +42,10 @@ type Workflow struct {
 
 // RunOptions configures workflow execution behavior
 type RunOptions struct {
-	DryRun bool
-	Writer io.Writer
-	Reader io.Reader // for confirm prompts; defaults to os.Stdin
+	DryRun      bool
+	SkipConfirm bool
+	Writer      io.Writer
+	Reader      io.Reader // for confirm prompts; defaults to os.Stdin
 }
 
 // Run executes a workflow with the given arguments
@@ -92,7 +93,7 @@ func Run(wf Workflow, args []string, ex Executor, opts RunOptions) error {
 		}
 
 		// Confirm prompt
-		if step.Confirm {
+		if step.Confirm && !opts.SkipConfirm {
 			fmt.Fprintf(w, "Run '%s'? [y/N] ", stepCmd)
 			scanner := bufio.NewScanner(r)
 			if scanner.Scan() {
