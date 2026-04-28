@@ -56,21 +56,29 @@ func loadFromScope(scope string) (*Config, error) {
 		if err != nil {
 			return nil, fmt.Errorf("getting home directory: %w", err)
 		}
-		v.SetConfigName("config")
-		v.AddConfigPath(filepath.Join(home, ".config", "ganbatte"))
-	case "project":
-		// Look for .ganbatte.* in current directory
-		for _, ext := range []string{"toml", "yaml", "yml", "json"} {
-			name := ".ganbatte." + ext
-			if _, err := os.Stat(name); err == nil {
-				v.SetConfigFile(name)
-				break
+		configFile, format := detectGlobalConfig(filepath.Join(home, ".config", "ganbatte"))
+		if _, err := os.Stat(configFile); err != nil {
+			if os.IsNotExist(err) {
+				return &Config{
+					Version:   "0.1.0",
+					Aliases:   make(map[string]Alias),
+					Workflows: make(map[string]Workflow),
+				}, nil
 			}
+			return nil, fmt.Errorf("checking global config: %w", err)
 		}
-		if v.ConfigFileUsed() == "" {
+		v.SetConfigFile(configFile)
+		v.SetConfigType(format)
+	case "project":
+		path, err := findProjectConfig()
+		if err != nil {
+			return nil, err
+		}
+		if path == "" {
 			// No project config found
 			return nil, nil
 		}
+		v.SetConfigFile(path)
 	default:
 		return nil, fmt.Errorf("unknown scope: %s", scope)
 	}
@@ -102,4 +110,84 @@ func loadFromScope(scope string) (*Config, error) {
 	}
 
 	return &cfg, nil
+}
+
+// findProjectConfig walks from the current directory upward looking for .ganbatte.*.
+func findProjectConfig() (string, error) {
+	dir, err := os.Getwd()
+	if err != nil {
+		return "", fmt.Errorf("getting working directory: %w", err)
+	}
+	startDir := dir
+
+	for {
+		for _, ext := range []string{"toml", "yaml", "yml", "json"} {
+			path := filepath.Join(dir, ".ganbatte."+ext)
+			if _, err := os.Stat(path); err == nil {
+				if dir != startDir && !hasVCSMarker(dir) {
+					continue
+				}
+				if safe, err := isSafeProjectConfig(path); err != nil {
+					return "", err
+				} else if !safe {
+					continue
+				}
+				return path, nil
+			} else if !os.IsNotExist(err) {
+				return "", fmt.Errorf("checking project config: %w", err)
+			}
+		}
+
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			return "", nil
+		}
+		dir = parent
+	}
+}
+
+func hasVCSMarker(dir string) bool {
+	for _, marker := range []string{".git", ".hg", ".svn"} {
+		if _, err := os.Stat(filepath.Join(dir, marker)); err == nil {
+			return true
+		}
+	}
+	return false
+}
+
+func isSafeProjectConfig(path string) (bool, error) {
+	info, err := os.Lstat(path)
+	if err != nil {
+		return false, fmt.Errorf("checking project config safety: %w", err)
+	}
+	if info.Mode()&os.ModeSymlink != 0 {
+		return false, nil
+	}
+	if !info.Mode().IsRegular() {
+		return false, nil
+	}
+	if info.Mode().Perm()&0o002 != 0 {
+		return false, nil
+	}
+	if owned, err := isOwnedByCurrentUser(path); err != nil {
+		return false, err
+	} else if !owned {
+		return false, nil
+	}
+
+	dir := filepath.Dir(path)
+	dirInfo, err := os.Stat(dir)
+	if err != nil {
+		return false, fmt.Errorf("checking project config directory: %w", err)
+	}
+	if dirInfo.Mode().Perm()&0o002 != 0 {
+		return false, nil
+	}
+	if owned, err := isOwnedByCurrentUser(dir); err != nil {
+		return false, err
+	} else if !owned {
+		return false, nil
+	}
+
+	return true, nil
 }

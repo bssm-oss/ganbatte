@@ -115,6 +115,93 @@ cmd = "git status"
 	assert.Empty(t, scoped.Conflicts)
 }
 
+func TestLoadScoped_GlobalFormatPriority(t *testing.T) {
+	tmpDir := t.TempDir()
+	setTestHome(t, tmpDir)
+
+	configDir := filepath.Join(tmpDir, ".config", "ganbatte")
+	require.NoError(t, os.MkdirAll(configDir, 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(configDir, "config.json"), []byte(`{
+  "version": "0.1.0",
+  "alias": {"json_alias": {"cmd": "echo json"}}
+}`), 0o644))
+	require.NoError(t, os.WriteFile(filepath.Join(configDir, "config.toml"), []byte(`
+version = "0.1.0"
+[alias.toml_alias]
+cmd = "echo toml"
+`), 0o644))
+
+	scoped, err := LoadScoped()
+	require.NoError(t, err)
+	assert.Contains(t, scoped.Global.Aliases, "toml_alias")
+	assert.NotContains(t, scoped.Global.Aliases, "json_alias")
+}
+
+func TestLoadScoped_ProjectParentDiscovery(t *testing.T) {
+	tmpDir := t.TempDir()
+	setTestHome(t, tmpDir)
+
+	projectRoot := filepath.Join(tmpDir, "repo")
+	nestedDir := filepath.Join(projectRoot, "apps", "cli")
+	require.NoError(t, os.MkdirAll(nestedDir, 0o755))
+	require.NoError(t, os.MkdirAll(filepath.Join(projectRoot, ".git"), 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(projectRoot, ".ganbatte.toml"), []byte(`
+version = "0.1.0"
+[alias.project]
+cmd = "echo project"
+`), 0o644))
+	t.Chdir(nestedDir)
+
+	scoped, err := LoadScoped()
+	require.NoError(t, err)
+	require.NotNil(t, scoped.Project)
+	assert.Equal(t, "echo project", scoped.Project.Aliases["project"].Cmd)
+	assert.Equal(t, "echo project", scoped.Merged.Aliases["project"].Cmd)
+}
+
+func TestLoadScoped_SkipsUnsafeProjectConfig(t *testing.T) {
+	tmpDir := t.TempDir()
+	setTestHome(t, tmpDir)
+
+	projectRoot := filepath.Join(tmpDir, "repo")
+	nestedDir := filepath.Join(projectRoot, "sub")
+	require.NoError(t, os.MkdirAll(nestedDir, 0o755))
+	require.NoError(t, os.MkdirAll(filepath.Join(projectRoot, ".git"), 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(tmpDir, "unsafe.toml"), []byte(`
+version = "0.1.0"
+[alias.unsafe]
+cmd = "echo unsafe"
+`), 0o644))
+	require.NoError(t, os.Symlink(filepath.Join(tmpDir, "unsafe.toml"), filepath.Join(projectRoot, ".ganbatte.toml")))
+	t.Chdir(nestedDir)
+
+	scoped, err := LoadScoped()
+	require.NoError(t, err)
+	assert.Nil(t, scoped.Project)
+}
+
+func TestLoadScoped_SkipsWritableProjectConfig(t *testing.T) {
+	tmpDir := t.TempDir()
+	setTestHome(t, tmpDir)
+
+	projectRoot := filepath.Join(tmpDir, "repo")
+	nestedDir := filepath.Join(projectRoot, "sub")
+	require.NoError(t, os.MkdirAll(nestedDir, 0o755))
+	require.NoError(t, os.MkdirAll(filepath.Join(projectRoot, ".git"), 0o755))
+	configPath := filepath.Join(projectRoot, ".ganbatte.toml")
+	require.NoError(t, os.WriteFile(configPath, []byte(`
+version = "0.1.0"
+[alias.unsafe]
+cmd = "echo unsafe"
+`), 0o666))
+	require.NoError(t, os.Chmod(configPath, 0o666))
+	t.Chdir(nestedDir)
+
+	scoped, err := LoadScoped()
+	require.NoError(t, err)
+	assert.Nil(t, scoped.Project)
+}
+
 func TestLoadScoped_NoConfig(t *testing.T) {
 	tmpDir := t.TempDir()
 	setTestHome(t, tmpDir)
@@ -131,8 +218,8 @@ func TestSaveGlobal(t *testing.T) {
 	setTestHome(t, tmpDir)
 
 	cfg := &Config{
-		Version: "0.1.0",
-		Aliases: map[string]Alias{"gs": {Cmd: "git status -sb"}},
+		Version:   "0.1.0",
+		Aliases:   map[string]Alias{"gs": {Cmd: "git status -sb"}},
 		Workflows: map[string]Workflow{},
 	}
 	require.NoError(t, cfg.SaveGlobal())
