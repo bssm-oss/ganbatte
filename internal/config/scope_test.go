@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -181,6 +182,10 @@ cmd = "echo unsafe"
 }
 
 func TestLoadScoped_SkipsWritableProjectConfig(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Windows file mode bits do not expose Unix-style world-writable permissions")
+	}
+
 	tmpDir := t.TempDir()
 	setTestHome(t, tmpDir)
 
