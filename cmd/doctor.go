@@ -270,7 +270,7 @@ func checkP10kOrdering(cmd *cobra.Command, home string, fix bool) bool {
 	}
 
 	result := applyP10kFix(lines, gnbLine, p10kLine)
-	if err := os.WriteFile(zshrc, []byte(strings.Join(result, "\n")), 0644); err != nil {
+	if err := os.WriteFile(zshrc, []byte(strings.Join(result, "\n")), 0o644); err != nil {
 		cmd.Printf("[ERROR] Could not write %s: %v\n", zshrc, err)
 		return true
 	}

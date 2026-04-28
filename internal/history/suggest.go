@@ -159,7 +159,7 @@ func detectParamPatterns(entries []Entry, existing map[string]string, minCount i
 		if len(tokens) < 3 {
 			continue
 		}
-		for prefixLen := 2; prefixLen <= min(3, len(tokens)-1); prefixLen++ {
+		for prefixLen := 2; prefixLen <= minInt(3, len(tokens)-1); prefixLen++ {
 			prefix := strings.Join(tokens[:prefixLen], " ")
 			if hasUnmatchedQuote(prefix) {
 				continue
@@ -405,7 +405,7 @@ func safeAliasName(cmd string, used map[string]bool) string {
 		// First char of first word + first 2 chars of second
 		w0 := strings.TrimLeft(tokens[0], "-./")
 		w1 := strings.TrimLeft(tokens[1], "-./")
-		if len(w0) > 0 && len(w1) > 0 {
+		if w0 != "" && w1 != "" {
 			if len(w1) >= 2 {
 				candidates = append(candidates, string(w0[0])+w1[:2])
 			}
@@ -663,7 +663,7 @@ func paramNameForPrefix(prefix string) string {
 		"add":       "target",
 		"remove":    "target",
 	}
-	for i := len(tokens) - 1; i >= max(0, len(tokens)-2); i-- {
+	for i := len(tokens) - 1; i >= maxInt(0, len(tokens)-2); i-- {
 		t := strings.ToLower(strings.TrimLeft(tokens[i], "-"))
 		if hint, ok := lastTokenHints[t]; ok {
 			return hint
@@ -672,14 +672,14 @@ func paramNameForPrefix(prefix string) string {
 	return "arg"
 }
 
-func min(a, b int) int {
+func minInt(a, b int) int {
 	if a < b {
 		return a
 	}
 	return b
 }
 
-func max(a, b int) int {
+func maxInt(a, b int) int {
 	if a > b {
 		return a
 	}
