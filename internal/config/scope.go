@@ -166,7 +166,7 @@ func isSafeProjectConfig(path string) (bool, error) {
 	if !info.Mode().IsRegular() {
 		return false, nil
 	}
-	if info.Mode().Perm()&0o002 != 0 {
+	if isOtherWritable(info.Mode()) {
 		return false, nil
 	}
 	if owned, err := isOwnedByCurrentUser(path); err != nil {
@@ -180,7 +180,7 @@ func isSafeProjectConfig(path string) (bool, error) {
 	if err != nil {
 		return false, fmt.Errorf("checking project config directory: %w", err)
 	}
-	if dirInfo.Mode().Perm()&0o002 != 0 {
+	if isOtherWritable(dirInfo.Mode()) {
 		return false, nil
 	}
 	if owned, err := isOwnedByCurrentUser(dir); err != nil {
