@@ -35,8 +35,6 @@ homebrew_casks:
     directory: Casks
     generate_completions_from_executable:
       executable: "bin/gnb"
-      args:
-        - completion
       shell_parameter_format: cobra
       shells:
         - bash
