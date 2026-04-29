@@ -10,7 +10,7 @@
 
 보안 취약점을 발견하셨다면 **공개 이슈로 등록하지 마시고**, 아래 방법으로 비공개 보고해주세요:
 
-- GitHub Security Advisory: [Report a vulnerability](https://github.com/justn-hyeok/ganbatte/security/advisories/new)
+- GitHub Security Advisory: [Report a vulnerability](https://github.com/bssm-oss/ganbatte/security/advisories/new)
 
 보고 시 포함해주실 내용:
 - 취약점 설명
