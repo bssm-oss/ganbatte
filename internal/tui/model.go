@@ -42,7 +42,7 @@ type Model struct {
 	keys          KeyMap
 
 	// Set when user selects an item
-	SelectedItem *Item
+	SelectedItem   *Item
 	SelectedAction Action
 	Quitting       bool
 }

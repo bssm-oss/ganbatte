@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/justn-hyeok/ganbatte/internal/history"
+	"github.com/bssm-oss/ganbatte/internal/history"
 )
 
 const maxLogSize = 10 * 1024 * 1024 // 10 MB

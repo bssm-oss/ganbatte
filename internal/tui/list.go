@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/justn-hyeok/ganbatte/internal/config"
+	"github.com/bssm-oss/ganbatte/internal/config"
 )
 
 // ItemType represents the type of a list item.
 type ItemType int
 
 const (
-	AliasItem    ItemType = iota
+	AliasItem ItemType = iota
 	WorkflowItem
 )
 
@@ -27,13 +27,13 @@ const (
 type Item struct {
 	Name        string
 	Type        ItemType
-	Command     string   // for aliases
-	Description string   // for workflows
+	Command     string // for aliases
+	Description string // for workflows
 	Steps       []config.Step
 	Params      []string
 	Tags        []string
-	Confirm     bool     // for aliases with confirm guard
-	Scope       Scope    // global or project
+	Confirm     bool  // for aliases with confirm guard
+	Scope       Scope // global or project
 }
 
 // Title returns the display title.

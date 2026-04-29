@@ -54,10 +54,10 @@
 brew install --cask bssm-oss/tap/ganbatte
 
 # Go install (macOS / Linux)
-go install github.com/justn-hyeok/ganbatte@latest
+go install github.com/bssm-oss/ganbatte@latest
 
 # 로컬 빌드
-git clone https://github.com/justn-hyeok/ganbatte.git
+git clone https://github.com/bssm-oss/ganbatte.git
 cd ganbatte
 go build -o gnb .
 ```

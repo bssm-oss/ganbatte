@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/justn-hyeok/ganbatte/internal/config"
+	"github.com/bssm-oss/ganbatte/internal/config"
 	"github.com/spf13/cobra"
 )
 

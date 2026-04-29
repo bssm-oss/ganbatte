@@ -7,8 +7,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/justn-hyeok/ganbatte/internal/config"
-	"github.com/justn-hyeok/ganbatte/internal/workflow"
+	"github.com/bssm-oss/ganbatte/internal/config"
+	"github.com/bssm-oss/ganbatte/internal/workflow"
 	"github.com/spf13/cobra"
 )
 

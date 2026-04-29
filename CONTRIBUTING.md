@@ -90,7 +90,7 @@ go test -run TestMigrate ./...  # 특정 테스트
 
 ## Reporting Bugs
 
-[GitHub Issues](https://github.com/justn-hyeok/ganbatte/issues)에 다음 정보와 함께 등록:
+[GitHub Issues](https://github.com/bssm-oss/ganbatte/issues)에 다음 정보와 함께 등록:
 
 - OS / shell / Go version
 - 재현 단계

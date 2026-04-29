@@ -6,10 +6,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/justn-hyeok/ganbatte/internal/config"
-	"github.com/justn-hyeok/ganbatte/internal/history"
-	"github.com/justn-hyeok/ganbatte/internal/shell"
-	"github.com/justn-hyeok/ganbatte/internal/track"
+	"github.com/bssm-oss/ganbatte/internal/config"
+	"github.com/bssm-oss/ganbatte/internal/history"
+	"github.com/bssm-oss/ganbatte/internal/shell"
+	"github.com/bssm-oss/ganbatte/internal/track"
 	"github.com/spf13/cobra"
 )
 

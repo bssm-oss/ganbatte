@@ -12,8 +12,8 @@ import (
 // FishParser parses fish shell history files.
 // Format:
 //
-//	- cmd: <command>
-//	  when: <timestamp>
+//   - cmd: <command>
+//     when: <timestamp>
 type FishParser struct{}
 
 // Parse reads a fish history file and returns entries.

@@ -1,4 +1,4 @@
-module github.com/justn-hyeok/ganbatte
+module github.com/bssm-oss/ganbatte
 
 go 1.26.1
 

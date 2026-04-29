@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/justn-hyeok/ganbatte/cmd"
+	"github.com/bssm-oss/ganbatte/cmd"
 	"github.com/spf13/cobra/doc"
 )
 
