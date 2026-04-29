@@ -9,6 +9,8 @@ All notable changes to this project will be documented in this file.
 - Project config discovery now walks parent directories, so `.ganbatte.*` works from nested repo paths.
 
 ### Fixed
+- Go install documentation now uses the `cmd/gnb` package so the installed binary is named `gnb`.
+- Homebrew cask completion generation now invokes the installed `gnb` binary directly.
 - Go module path now matches the public `bssm-oss/ganbatte` repository, so `go install github.com/bssm-oss/ganbatte@latest` works.
 - Homebrew cask completion generation no longer passes a duplicate `completion` argument.
 - `gnb run` and `gnb show` now use merged global/project config, matching `gnb list` behavior.

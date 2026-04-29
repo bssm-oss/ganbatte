@@ -34,7 +34,7 @@ homebrew_casks:
     description: "Workflow/shortcut management CLI for lazy developers"
     directory: Casks
     generate_completions_from_executable:
-      executable: "bin/gnb"
+      executable: "gnb"
       shell_parameter_format: cobra
       shells:
         - bash
