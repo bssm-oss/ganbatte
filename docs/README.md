@@ -15,7 +15,7 @@ This directory contains the longer-form documentation for `ganbatte` (`gnb`), a 
 ### Install and Verify
 
 ```bash
-brew install --cask bssm-oss/tap/ganbatte
+brew install bssm-oss/tap/ganbatte
 gnb doctor
 gnb --help
 ```
@@ -60,7 +60,7 @@ Before calling a release done, verify at least one clean consumer path:
 
 ```bash
 go install github.com/bssm-oss/ganbatte/cmd/gnb@<version>
-brew install --cask bssm-oss/tap/ganbatte --force
+brew reinstall bssm-oss/tap/ganbatte
 ```
 
 ## Configuration Files
