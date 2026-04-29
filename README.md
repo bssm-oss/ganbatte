@@ -2,19 +2,27 @@
 
 [한국어](./README.ko.md) | [Command reference](./docs/man) | [Specification](./docs/spec.md) | [Releases](https://github.com/bssm-oss/ganbatte/releases)
 
-> Workflow and shortcut management for lazy developers. 頑張って!
+> Your shell history knows what you repeat. ganbatte turns it into aliases and workflows.
 
-`ganbatte` turns scattered shell aliases and repeated command sequences into a portable, searchable, project-aware CLI. It keeps the speed of shell aliases, adds guardrails and workflows, and mines your history for shortcuts you would actually use.
+Your `.zshrc` knows your shortcuts. Your shell history knows your habits. Your project knows its workflows.
+
+`ganbatte` puts them in one place: a local command hub for migrating aliases, mining repeated commands, and promoting command sequences into reusable workflows.
 
 ```bash
-gnb add gs "git status -sb"
-eval "$(gnb shell-init)"
-gs
+brew install --cask bssm-oss/tap/ganbatte
+
+gnb suggest   # find repeated commands and workflow candidates
+gnb migrate   # import existing shell aliases
+gnb           # browse everything in a TUI
 ```
+
+![ganbatte TUI demo](docs/demo/tui.gif)
 
 ## Why It Exists
 
-Shell aliases are fast until they become a pile of hand-edited dotfiles. Make, just, and task are great for project build tasks, but they are not designed for personal command shortcuts, cross-shell alias migration, or history-driven recommendations.
+Shell aliases are fast until your `.zshrc` becomes an alias graveyard. Make, just, and task are great for project build tasks, but they are not designed for personal command shortcuts, cross-shell alias migration, or history-driven recommendations.
+
+Atuin remembers what you typed. `ganbatte` turns what you repeat into commands you can keep.
 
 `gnb` sits in the middle:
 
@@ -30,7 +38,43 @@ Shell aliases are fast until they become a pile of hand-edited dotfiles. Make, j
 
 ## Killer Features
 
-### 1. Migrate Existing Shell Aliases
+### 1. Suggest Shortcuts From Real Usage
+
+`gnb shell-init` can passively append command history to `~/.local/share/ganbatte/track.log` without spawning the `gnb` binary for every command. `gnb suggest` then uses shell history or the track log to recommend aliases, parameterized aliases, and workflows.
+
+```bash
+gnb suggest
+gnb suggest --apply
+gnb suggest --from-history
+```
+
+```text
+$ gnb suggest
+Analyzing ganbatte track log (/Users/you/.local/share/ganbatte/track.log) (312 entries)...
+
+=== Alias Suggestions ===
+  1. c = claude
+     Used 5 times · saves ~25 keystrokes
+
+=== Parameterized Alias Suggestions ===
+  1. gcl(repo) -> git clone {repo}
+     Pattern 'git clone <...>' used 25 times with 25 variants
+
+=== Workflow Suggestions ===
+  1. git-add
+     Step 1: git add .
+     Step 2: git commit -m "update"
+     Step 3: git push
+     Sequence appeared 7 times
+
+Applying all suggestions would save ~89 keystrokes based on your history.
+```
+
+Suggestions are ranked by estimated keystrokes saved, not just raw frequency. Destructive commands detected during `--apply` are marked with `confirm = true`.
+
+![gnb suggest demo](docs/demo/suggest.gif)
+
+### 2. Migrate Existing Shell Aliases
 
 Bring your current `.zshrc`, `.bashrc`, `.bash_aliases`, or fish aliases into one managed config.
 
@@ -55,17 +99,17 @@ Found 8 aliases in /Users/you/.bash_aliases
 Import all? [Y/n] y
 ```
 
-### 2. Suggest Shortcuts From Real Usage
+![gnb migrate demo](docs/demo/migrate.gif)
 
-`gnb shell-init` can passively append command history to `~/.local/share/ganbatte/track.log` without spawning the `gnb` binary for every command. `gnb suggest` then uses shell history or the track log to recommend aliases, parameterized aliases, and workflows.
+### 3. Browse Everything in a TUI
 
-```bash
-gnb suggest
-gnb suggest --apply
-gnb suggest --from-history
-```
+Run `gnb` with no arguments to open the command hub: fuzzy search, preview, tags, and global/project labels for every alias and workflow.
 
-Suggestions are ranked by estimated keystrokes saved, not just raw frequency. Destructive commands detected during `--apply` are marked with `confirm = true`.
+![ganbatte TUI demo](docs/demo/tui.gif)
+
+## Privacy
+
+`gnb suggest` analyzes local shell history files and the local ganbatte track log. Nothing is sent to a server, and ganbatte has no telemetry, account, cloud sync, or AI command generation.
 
 ## Install
 
