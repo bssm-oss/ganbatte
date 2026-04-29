@@ -2,19 +2,27 @@
 
 [English](./README.md) | [명령어 레퍼런스](./docs/man) | [스펙](./docs/spec.md) | [릴리즈](https://github.com/bssm-oss/ganbatte/releases)
 
-> lazy developers를 위한 워크플로우/단축어 관리 CLI. 頑張って!
+> 내 shell history가 이미 알고 있는 반복 작업을 alias/workflow로 바꿔주는 CLI.
 
-`ganbatte`는 흩어진 shell alias와 반복 명령 시퀀스를 **이식 가능하고, 검색 가능하고, 프로젝트 스코프를 이해하는 CLI**로 정리해준다. shell alias의 빠른 사용감은 유지하면서, 파라미터, 위험 명령 확인, workflow, 히스토리 기반 추천을 더한다.
+내 `.zshrc`는 단축어를 알고 있다. 내 shell history는 습관을 알고 있다. 내 프로젝트는 workflow를 알고 있다.
+
+`ganbatte`는 이 셋을 한 곳에 모은다. 기존 alias를 가져오고, 반복 명령을 찾고, 명령 시퀀스를 재사용 가능한 workflow로 승격시키는 로컬 command hub다.
 
 ```bash
-gnb add gs "git status -sb"
-eval "$(gnb shell-init)"
-gs
+brew install --cask bssm-oss/tap/ganbatte
+
+gnb suggest   # 반복 명령과 workflow 후보 찾기
+gnb migrate   # 기존 shell alias 가져오기
+gnb           # TUI에서 전부 탐색하고 실행
 ```
+
+![ganbatte TUI demo](docs/demo/tui.gif)
 
 ## 왜 만들었나
 
-shell alias는 빠르지만 많아질수록 dotfile 더미가 된다. make, just, task는 프로젝트 빌드 태스크에는 좋지만 개인 단축어, cross-shell alias 관리, 히스토리 기반 추천에는 맞지 않는다.
+shell alias는 빠르지만 많아질수록 `.zshrc`가 alias 공동묘지가 된다. make, just, task는 프로젝트 빌드 태스크에는 좋지만 개인 단축어, cross-shell alias 관리, 히스토리 기반 추천에는 맞지 않는다.
+
+Atuin이 내가 입력한 history를 기억한다면, `ganbatte`는 반복해서 입력한 history를 내가 계속 쓸 수 있는 명령으로 바꾼다.
 
 `gnb`는 그 중간 지점에 있다.
 
@@ -30,7 +38,45 @@ shell alias는 빠르지만 많아질수록 dotfile 더미가 된다. make, just
 
 ## 킬러 피처
 
-### 1. 기존 shell alias 마이그레이션
+### 1. 실제 사용 기록 기반 추천
+
+`gnb shell-init`을 켜면 명령 실행 기록을 `~/.local/share/ganbatte/track.log`에 가볍게 기록할 수 있다. 이때 매 명령마다 `gnb` 바이너리를 띄우지 않고 shell built-in으로 append하므로 레이턴시가 거의 없다.
+
+`gnb suggest`는 shell history 또는 track log를 분석해 alias, 파라미터 alias, workflow 후보를 추천한다.
+
+```bash
+gnb suggest
+gnb suggest --apply
+gnb suggest --from-history
+```
+
+```text
+$ gnb suggest
+Analyzing ganbatte track log (/Users/you/.local/share/ganbatte/track.log) (312 entries)...
+
+=== Alias Suggestions ===
+  1. c = claude
+     Used 5 times · saves ~25 keystrokes
+
+=== Parameterized Alias Suggestions ===
+  1. gcl(repo) -> git clone {repo}
+     Pattern 'git clone <...>' used 25 times with 25 variants
+
+=== Workflow Suggestions ===
+  1. git-add
+     Step 1: git add .
+     Step 2: git commit -m "update"
+     Step 3: git push
+     Sequence appeared 7 times
+
+Applying all suggestions would save ~89 keystrokes based on your history.
+```
+
+추천은 단순 빈도가 아니라 예상 키 입력 절약량 기준으로 정렬된다. `--apply` 중 파괴적 명령이 감지되면 자동으로 `confirm = true`가 붙는다.
+
+![gnb suggest demo](docs/demo/suggest.gif)
+
+### 2. 기존 shell alias 마이그레이션
 
 `.zshrc`, `.bashrc`, `.bash_aliases`, fish 설정에 흩어진 alias를 `ganbatte` 설정으로 가져온다.
 
@@ -55,19 +101,17 @@ Found 8 aliases in /Users/you/.bash_aliases
 Import all? [Y/n] y
 ```
 
-### 2. 실제 사용 기록 기반 추천
+![gnb migrate demo](docs/demo/migrate.gif)
 
-`gnb shell-init`을 켜면 명령 실행 기록을 `~/.local/share/ganbatte/track.log`에 가볍게 기록할 수 있다. 이때 매 명령마다 `gnb` 바이너리를 띄우지 않고 shell built-in으로 append하므로 레이턴시가 거의 없다.
+### 3. TUI에서 전부 탐색
 
-`gnb suggest`는 shell history 또는 track log를 분석해 alias, 파라미터 alias, workflow 후보를 추천한다.
+인자 없이 `gnb`를 실행하면 command hub가 열린다. alias와 workflow를 fuzzy search로 찾고, preview를 보고, tag와 global/project 라벨로 구분할 수 있다.
 
-```bash
-gnb suggest
-gnb suggest --apply
-gnb suggest --from-history
-```
+![ganbatte TUI demo](docs/demo/tui.gif)
 
-추천은 단순 빈도가 아니라 예상 키 입력 절약량 기준으로 정렬된다. `--apply` 중 파괴적 명령이 감지되면 자동으로 `confirm = true`가 붙는다.
+## Privacy
+
+`gnb suggest`는 로컬 shell history 파일과 로컬 ganbatte track log만 분석한다. 서버로 전송하는 데이터는 없고, telemetry, 계정, cloud sync, AI 명령 생성도 없다.
 
 ## 설치
 
