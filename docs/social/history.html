@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <style>
+    html, body { margin: 0; width: 1200px; height: 800px; overflow: hidden; background: #11111b; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+    body { display: grid; place-items: center; }
+    .terminal { width: 1040px; height: 640px; border-radius: 22px; background: #1e1e2e; box-shadow: 0 34px 90px rgba(0,0,0,.52), inset 0 0 0 1px rgba(205,214,244,.12); overflow: hidden; }
+    .bar { height: 54px; display: flex; align-items: center; gap: 10px; padding: 0 22px; background: #181825; color: #6c7086; font-size: 18px; }
+    .dot { width: 14px; height: 14px; border-radius: 50%; } .r{background:#f38ba8}.y{background:#f9e2af}.g{background:#a6e3a1}
+    .title { margin-left: 18px; color: #9399b2; }
+    pre { margin: 0; padding: 34px 42px; color: #cdd6f4; font-size: 25px; line-height: 1.52; }
+    .prompt { color: #89b4fa; } .cmd { color: #cdd6f4; } .muted { color: #6c7086; } .git { color: #a6e3a1; } .docker { color: #89dceb; } .pnpm { color: #f9e2af; } .ssh { color: #fab387; }
+    .cursor { display: inline-block; width: 13px; height: 28px; background: #f5e0dc; vertical-align: -5px; }
+  </style>
+</head>
+<body>
+  <div class="terminal">
+    <div class="bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="title">~/.zsh_history</span></div>
+    <pre><span class="muted"># the commands are already there</span>
+<span class="prompt">❯</span> <span class="git">git status -sb</span>
+<span class="prompt">❯</span> <span class="docker">docker compose up -d</span>
+<span class="prompt">❯</span> <span class="pnpm">pnpm build</span>
+<span class="prompt">❯</span> <span class="git">git status -sb</span>
+<span class="prompt">❯</span> <span class="git">git add .</span>
+<span class="prompt">❯</span> <span class="git">git commit -m "update"</span>
+<span class="prompt">❯</span> <span class="git">git push</span>
+<span class="prompt">❯</span> <span class="docker">docker compose up -d</span>
+<span class="prompt">❯</span> <span class="pnpm">pnpm build</span>
+<span class="prompt">❯</span> <span class="ssh">ssh prod-box</span>
+<span class="prompt">❯</span> <span class="git">git status -sb</span>
+<span class="prompt">❯</span> <span class="cmd">gnb suggest</span><span class="cursor"></span></pre>
+  </div>
+</body>
+</html>

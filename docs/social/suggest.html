@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <style>
+    html, body { margin: 0; width: 1200px; height: 800px; overflow: hidden; background: #11111b; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+    body { display: grid; place-items: center; }
+    .terminal { width: 1040px; height: 640px; border-radius: 22px; background: #1e1e2e; box-shadow: 0 34px 90px rgba(0,0,0,.52), inset 0 0 0 1px rgba(205,214,244,.12); overflow: hidden; }
+    .bar { height: 54px; display: flex; align-items: center; gap: 10px; padding: 0 22px; background: #181825; color: #6c7086; font-size: 18px; }
+    .dot { width: 14px; height: 14px; border-radius: 50%; } .r{background:#f38ba8}.y{background:#f9e2af}.g{background:#a6e3a1}
+    .title { margin-left: 18px; color: #9399b2; }
+    pre { margin: 0; padding: 30px 42px; color: #cdd6f4; font-size: 22px; line-height: 1.4; }
+    .prompt { color: #89b4fa; } .section { color: #f5c2e7; } .name { color: #a6e3a1; } .cmd { color: #f9e2af; } .muted { color: #7f849c; } .total { color: #fab387; }
+  </style>
+</head>
+<body>
+  <div class="terminal">
+    <div class="bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="title">gnb suggest</span></div>
+    <pre><span class="prompt">❯</span> gnb suggest
+<span class="muted">Analyzing ganbatte track log (~/.local/share/ganbatte/track.log) (312 entries)...</span>
+
+<span class="section">=== Alias Suggestions ===</span>
+  1. <span class="name">gss</span>          = <span class="cmd">git status -sb</span>
+     Used 5 times · saves ~55 keystrokes
+  2. <span class="name">dcup</span>         = <span class="cmd">docker compose up -d</span>
+     Used 4 times · saves ~68 keystrokes
+
+<span class="section">=== Workflow Suggestions ===</span>
+  1. <span class="name">git-add</span>
+     Step 1: <span class="cmd">git add .</span>
+     Step 2: <span class="cmd">git commit -m "update"</span>
+     Step 3: <span class="cmd">git push</span>
+     Sequence appeared 7 times
+
+<span class="total">Applying all suggestions would save ~189 keystrokes based on your history.</span></pre>
+  </div>
+</body>
+</html>
