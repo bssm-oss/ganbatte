@@ -1,6 +1,6 @@
 # Documentation
 
-This directory contains the longer-form documentation for `ganbatte` (`gnb`). Start with the root [README](../README.md) for the product overview, then use these files when you need details.
+This directory contains the longer-form documentation for `ganbatte` (`gnb`), a local CLI that turns repeated shell history into aliases and workflows. Start with the root [README](../README.md) for the product overview, then use these files when you need details.
 
 ## Documents
 
@@ -26,6 +26,16 @@ or:
 go install github.com/bssm-oss/ganbatte/cmd/gnb@latest
 gnb doctor
 ```
+
+### Analyze Repeated Commands
+
+```bash
+gnb suggest
+gnb suggest --from-history
+gnb suggest --apply
+```
+
+`gnb suggest` reads local shell history and the local ganbatte track log only. It does not send command history to a server.
 
 ### Generate Man Pages
 
