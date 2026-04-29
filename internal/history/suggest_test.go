@@ -15,11 +15,11 @@ func TestIsNoise(t *testing.T) {
 		cmd   string
 		noise bool
 	}{
-		{"ls", true},          // too short (< 4)
-		{"cd ~", false},       // 4 chars exactly
-		{"# comment", true},   // starts with #
+		{"ls", true},            // too short (< 4)
+		{"cd ~", false},         // 4 chars exactly
+		{"# comment", true},     // starts with #
 		{"git status \\", true}, // ends with backslash (continuation)
-		{"}{\\", true},        // all punctuation
+		{"}{\\", true},          // all punctuation
 		{"git status -sb", false},
 		{"npm run build", false},
 		{"   ", true}, // short after we check len(cmd) < 4 (spaces still < 4 meaningful but len("   ")==3)
@@ -36,13 +36,13 @@ func TestIsNoise(t *testing.T) {
 
 func TestIsArgLike(t *testing.T) {
 	// Should be arg-like (true)
-	assert.True(t, isArgLike("github.com/user/repo"))    // contains dot
-	assert.True(t, isArgLike("./src/main.go"))           // contains /
-	assert.True(t, isArgLike("user@host.com"))           // contains @
-	assert.True(t, isArgLike("my-long-package-name"))    // len > 10
-	assert.True(t, isArgLike("MyPackage"))               // uppercase
-	assert.True(t, isArgLike("node123"))                 // has digit
-	assert.True(t, isArgLike("http://example.com"))      // URL
+	assert.True(t, isArgLike("github.com/user/repo")) // contains dot
+	assert.True(t, isArgLike("./src/main.go"))        // contains /
+	assert.True(t, isArgLike("user@host.com"))        // contains @
+	assert.True(t, isArgLike("my-long-package-name")) // len > 10
+	assert.True(t, isArgLike("MyPackage"))            // uppercase
+	assert.True(t, isArgLike("node123"))              // has digit
+	assert.True(t, isArgLike("http://example.com"))   // URL
 
 	// Should NOT be arg-like (subcommand-like)
 	assert.False(t, isArgLike("add"))

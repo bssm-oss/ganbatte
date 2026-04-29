@@ -8,9 +8,9 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
 
-	"github.com/justn-hyeok/ganbatte/internal/config"
-	"github.com/justn-hyeok/ganbatte/internal/tui"
-	"github.com/justn-hyeok/ganbatte/internal/workflow"
+	"github.com/bssm-oss/ganbatte/internal/config"
+	"github.com/bssm-oss/ganbatte/internal/tui"
+	"github.com/bssm-oss/ganbatte/internal/workflow"
 )
 
 // RootCmd represents the base command when called without any subcommands

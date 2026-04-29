@@ -7,10 +7,10 @@ import (
 
 func TestFindShellInitLines(t *testing.T) {
 	tests := []struct {
-		name        string
-		lines       []string
-		wantP10k    int
-		wantGnb     int
+		name     string
+		lines    []string
+		wantP10k int
+		wantGnb  int
 	}{
 		{
 			name: "both present, gnb after p10k",
