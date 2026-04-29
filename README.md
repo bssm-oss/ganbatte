@@ -54,7 +54,7 @@
 brew install --cask bssm-oss/tap/ganbatte
 
 # Go install (macOS / Linux)
-go install github.com/bssm-oss/ganbatte@latest
+go install github.com/bssm-oss/ganbatte/cmd/gnb@latest
 
 # 로컬 빌드
 git clone https://github.com/bssm-oss/ganbatte.git
