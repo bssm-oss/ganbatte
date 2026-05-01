@@ -9,7 +9,7 @@ Your `.zshrc` knows your shortcuts. Your shell history knows your habits. Your p
 `ganbatte` puts them in one place: a local command hub for migrating aliases, mining repeated commands, and promoting command sequences into reusable workflows.
 
 ```bash
-brew install bssm-oss/tap/ganbatte
+brew install --cask bssm-oss/tap/ganbatte
 
 gnb suggest   # find repeated commands and workflow candidates
 gnb migrate   # import existing shell aliases
@@ -116,7 +116,7 @@ Run `gnb` with no arguments to open the command hub: fuzzy search, preview, tags
 ### Homebrew
 
 ```bash
-brew install bssm-oss/tap/ganbatte
+brew install --cask bssm-oss/tap/ganbatte
 ```
 
 ### Go

@@ -15,7 +15,7 @@ This directory contains the longer-form documentation for `ganbatte` (`gnb`), a 
 ### Install and Verify
 
 ```bash
-brew install bssm-oss/tap/ganbatte
+brew install --cask bssm-oss/tap/ganbatte
 gnb doctor
 gnb --help
 ```
