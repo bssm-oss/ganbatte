@@ -15,7 +15,7 @@ This directory contains the longer-form documentation for `ganbatte` (`gnb`), a 
 ### Install and Verify
 
 ```bash
-brew install --cask bssm-oss/tap/ganbatte
+brew install bssm-oss/tap/ganbatte
 gnb doctor
 gnb --help
 ```
@@ -62,6 +62,8 @@ Before calling a release done, verify at least one clean consumer path:
 go install github.com/bssm-oss/ganbatte/cmd/gnb@<version>
 brew reinstall bssm-oss/tap/ganbatte
 ```
+
+`ganbatte` intentionally publishes a Homebrew formula through GoReleaser's `brews` configuration. GoReleaser v2 may warn that `brews` is deprecated, but the official replacement (`homebrew_casks`) publishes a cask and would change the install semantics. Treat the warning as future GoReleaser v3 migration debt, not a v2 release blocker.
 
 ## Configuration Files
 

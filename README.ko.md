@@ -9,7 +9,7 @@
 `ganbatte`는 이 셋을 한 곳에 모은다. 기존 alias를 가져오고, 반복 명령을 찾고, 명령 시퀀스를 재사용 가능한 workflow로 승격시키는 로컬 command hub다.
 
 ```bash
-brew install --cask bssm-oss/tap/ganbatte
+brew install bssm-oss/tap/ganbatte
 
 gnb suggest   # 반복 명령과 workflow 후보 찾기
 gnb migrate   # 기존 shell alias 가져오기
@@ -118,7 +118,7 @@ Import all? [Y/n] y
 ### Homebrew
 
 ```bash
-brew install --cask bssm-oss/tap/ganbatte
+brew install bssm-oss/tap/ganbatte
 ```
 
 ### Go
@@ -312,7 +312,7 @@ go vet ./...
 go run cmd/gendoc.go
 ```
 
-릴리즈 빌드는 `v*` 태그 push 시 GoReleaser가 처리한다. 현재 릴리즈는 GitHub release archive, `go install github.com/bssm-oss/ganbatte/cmd/gnb@v1.5.6`, Homebrew Cask 경로로 실제 설치 검증을 마쳤다.
+릴리즈 빌드는 `v*` 태그 push 시 GoReleaser가 처리한다. 현재 릴리즈는 GitHub release archive, `go install github.com/bssm-oss/ganbatte/cmd/gnb@v1.5.6`, Homebrew formula 경로로 실제 설치 검증을 마쳤다.
 
 ## 하지 않는 것
 

@@ -63,7 +63,7 @@ testdata/fixtures/      Shell history samples, config format examples
 ## CI/CD
 
 - GitHub Actions: test (ubuntu/macos/windows) + lint (golangci-lint)
-- goreleaser: multi-OS binaries + Homebrew tap (`justn-hyeok/homebrew-tap`)
+- goreleaser: multi-OS binaries + Homebrew formula tap (`bssm-oss/homebrew-tap`)
 - All tests use `shell: bash` on Windows to avoid PowerShell parsing issues
 
 ## Test Coverage
