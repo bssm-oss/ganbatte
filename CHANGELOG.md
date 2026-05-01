@@ -10,12 +10,13 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 - Go install documentation now uses the `cmd/gnb` package so the installed binary is named `gnb`.
-- Homebrew cask completion generation now invokes the installed `gnb` binary directly.
+- Homebrew formula completion generation now invokes the installed `gnb` binary directly.
 - Go module path now matches the public `bssm-oss/ganbatte` repository, so `go install github.com/bssm-oss/ganbatte@latest` works.
-- Homebrew cask completion generation no longer passes a duplicate `completion` argument.
+- Homebrew formula completion generation no longer passes a duplicate `completion` argument.
 - `gnb run` and `gnb show` now use merged global/project config, matching `gnb list` behavior.
 - `gnb run` now asks for confirmation when a project item overrides a global item unless `--yes` is used.
 - Release workflow now passes the Homebrew tap token using the environment variable expected by GoReleaser.
+- Release documentation now records why Homebrew formula publishing stays on GoReleaser `brews` despite the v2 deprecation warning.
 - Release workflow now validates manual dispatch tags and runs tests before publishing tokens are injected.
 - CI lint issues reported by golangci-lint v1.64.8.
 

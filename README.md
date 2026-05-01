@@ -310,7 +310,7 @@ go vet ./...
 go run cmd/gendoc.go
 ```
 
-Release builds are handled by GoReleaser on pushed `v*` tags. Consumer paths verified for the current release include GitHub release archives, `go install github.com/bssm-oss/ganbatte/cmd/gnb@v1.5.6`, and Homebrew Cask.
+Release builds are handled by GoReleaser on pushed `v*` tags. Consumer paths verified for the current release include GitHub release archives, `go install github.com/bssm-oss/ganbatte/cmd/gnb@v1.5.6`, and the Homebrew formula.
 
 ## Non-Goals
 

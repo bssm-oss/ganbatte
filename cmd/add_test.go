@@ -36,6 +36,7 @@ func executeCmd(args ...string) (string, error) {
 	_ = initCmd.Flags().Set("format", "")
 	_ = initCmd.Flags().Set("project", "false")
 	_ = shellInitCmd.Flags().Set("shell", "")
+	_ = doctorCmd.Flags().Set("fix", "false")
 	err := RootCmd.Execute()
 	return buf.String(), err
 }
@@ -522,6 +523,31 @@ func TestDoctorCommand(t *testing.T) {
 	assert.Contains(t, out, "[OK] Global config:")
 }
 
+func TestDoctorDoesNotSuggestFixForNonRepairableIssues(t *testing.T) {
+	setupTestHome(t)
+	t.Setenv("SHELL", "/bin/zsh")
+	_, _ = executeCmd("init", "--format", "toml")
+
+	out, err := executeCmd("doctor")
+	require.NoError(t, err)
+	assert.Contains(t, out, "History file not found")
+	assert.NotContains(t, out, "automatically fix repairable issues")
+}
+
+func TestDoctorSuggestsFixForRepairableIssues(t *testing.T) {
+	home := setupTestHome(t)
+	t.Setenv("SHELL", "/bin/zsh")
+	_, _ = executeCmd("init", "--format", "toml")
+
+	duplicateConfig := filepath.Join(home, ".config", "ganbatte", "config.yaml")
+	require.NoError(t, os.WriteFile(duplicateConfig, []byte("version: \"1.0.0\"\n"), 0o644))
+
+	out, err := executeCmd("doctor")
+	require.NoError(t, err)
+	assert.Contains(t, out, "Multiple config files found")
+	assert.Contains(t, out, "automatically fix repairable issues")
+}
+
 // --- config path ---
 
 func TestConfigPath(t *testing.T) {
@@ -629,6 +655,25 @@ func TestRootCommand(t *testing.T) {
 	out, err := executeCmd()
 	require.NoError(t, err)
 	assert.Contains(t, out, "No aliases or workflows configured")
+}
 
-	// With config + items: would launch TUI (can't test interactive TUI here)
+func TestRootCommandNonTTYWithItems(t *testing.T) {
+	setupTestHome(t)
+	_, _ = executeCmd("init", "--format", "toml")
+	_, _ = executeCmd("add", "gs", "git status -sb")
+
+	oldStdin := os.Stdin
+	readEnd, writeEnd, err := os.Pipe()
+	require.NoError(t, err)
+	defer func() {
+		os.Stdin = oldStdin
+		readEnd.Close()
+	}()
+	require.NoError(t, writeEnd.Close())
+	os.Stdin = readEnd
+
+	_, err = executeCmd()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "TUI requires an interactive terminal")
+	assert.NotContains(t, err.Error(), "/dev/tty")
 }

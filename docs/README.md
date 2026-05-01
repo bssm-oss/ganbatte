@@ -63,6 +63,8 @@ go install github.com/bssm-oss/ganbatte/cmd/gnb@<version>
 brew reinstall bssm-oss/tap/ganbatte
 ```
 
+`ganbatte` intentionally publishes a Homebrew formula through GoReleaser's `brews` configuration. GoReleaser v2 may warn that `brews` is deprecated, but the official replacement (`homebrew_casks`) publishes a cask and would change the install semantics. Treat the warning as future GoReleaser v3 migration debt, not a v2 release blocker.
+
 ## Configuration Files
 
 `ganbatte` supports three equivalent config formats:

@@ -33,6 +33,10 @@ var RootCmd = &cobra.Command{
 			return nil
 		}
 
+		if !isInteractiveTerminal(os.Stdin) {
+			return fmt.Errorf("TUI requires an interactive terminal; use 'gnb list' or 'gnb run <name>' in scripts")
+		}
+
 		m := tui.New(items)
 		p := tea.NewProgram(m, tea.WithAltScreen())
 		finalModel, err := p.Run()
@@ -58,6 +62,14 @@ var RootCmd = &cobra.Command{
 
 		return nil
 	},
+}
+
+func isInteractiveTerminal(file *os.File) bool {
+	info, err := file.Stat()
+	if err != nil {
+		return false
+	}
+	return info.Mode()&os.ModeCharDevice != 0
 }
 
 func handleRun(scoped *config.ScopedConfig, item *tui.Item) error {

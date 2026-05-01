@@ -21,6 +21,7 @@ var doctorCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		fix, _ := cmd.Flags().GetBool("fix")
 		issues := 0
+		repairableIssues := 0
 
 		// 1. Shell detection
 		sh := shell.Detect()
@@ -65,6 +66,7 @@ var doctorCmd = &cobra.Command{
 		case 1:
 			cmd.Printf("[OK] Global config: %s\n", foundConfigs[0])
 		default:
+			repairableIssues++
 			cmd.Printf("[WARN] Multiple config files found — only %s is used\n", foundConfigs[0])
 			for _, p := range foundConfigs[1:] {
 				cmd.Printf("       ignored: %s\n", p)
@@ -160,6 +162,7 @@ var doctorCmd = &cobra.Command{
 			cmd.Println("=== Shell Integration ===")
 			if checkP10kOrdering(cmd, home, fix) {
 				issues++
+				repairableIssues++
 			} else {
 				p10kPresent := func() bool {
 					data, err := os.ReadFile(filepath.Join(home, ".zshrc"))
@@ -184,7 +187,7 @@ var doctorCmd = &cobra.Command{
 			cmd.Println("No issues found. ganbatte!")
 		} else {
 			cmd.Printf("%d issue(s) found\n", issues)
-			if !fix {
+			if !fix && repairableIssues > 0 {
 				cmd.Println("Run 'gnb doctor --fix' to automatically fix repairable issues")
 			}
 		}

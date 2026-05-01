@@ -312,7 +312,7 @@ go vet ./...
 go run cmd/gendoc.go
 ```
 
-릴리즈 빌드는 `v*` 태그 push 시 GoReleaser가 처리한다. 현재 릴리즈는 GitHub release archive, `go install github.com/bssm-oss/ganbatte/cmd/gnb@v1.5.6`, Homebrew Cask 경로로 실제 설치 검증을 마쳤다.
+릴리즈 빌드는 `v*` 태그 push 시 GoReleaser가 처리한다. 현재 릴리즈는 GitHub release archive, `go install github.com/bssm-oss/ganbatte/cmd/gnb@v1.5.6`, Homebrew formula 경로로 실제 설치 검증을 마쳤다.
 
 ## 하지 않는 것
 
