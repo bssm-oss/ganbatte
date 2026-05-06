@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <style>
+    html, body { margin: 0; width: 1200px; height: 800px; overflow: hidden; background: #11111b; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+    body { display: grid; place-items: center; }
+    .terminal { width: 1040px; height: 640px; border-radius: 22px; background: #1e1e2e; box-shadow: 0 34px 90px rgba(0,0,0,.52), inset 0 0 0 1px rgba(205,214,244,.12); overflow: hidden; }
+    .bar { height: 54px; display: flex; align-items: center; gap: 10px; padding: 0 22px; background: #181825; color: #6c7086; font-size: 18px; }
+    .dot { width: 14px; height: 14px; border-radius: 50%; } .r{background:#f38ba8}.y{background:#f9e2af}.g{background:#a6e3a1}
+    .title { margin-left: 18px; color: #9399b2; }
+    .app { padding: 34px 42px; color: #cdd6f4; font-size: 24px; line-height: 1.35; }
+    .brand { color: #f5c2e7; font-size: 28px; margin-bottom: 24px; }
+    .grid { display: grid; grid-template-columns: 360px 1fr; gap: 28px; }
+    .row { padding: 5px 12px; border-radius: 9px; color: #a6adc8; }
+    .active { background: #313244; color: #cdd6f4; }
+    .tag { color: #89b4fa; } .kind { color: #a6e3a1; }
+    .panel { border: 2px solid #45475a; border-radius: 14px; min-height: 330px; padding: 30px; }
+    .panel h2 { margin: 0 0 26px; color: #cdd6f4; font-size: 28px; font-weight: 600; }
+    .label { color: #6c7086; } .value { color: #cdd6f4; } .cmd { color: #f9e2af; }
+    .footer { margin-top: 30px; color: #7f849c; font-size: 20px; }
+  </style>
+</head>
+<body>
+  <div class="terminal">
+    <div class="bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="title">gnb</span></div>
+    <div class="app">
+      <div class="brand">ganbatte 頑張って</div>
+      <div class="grid">
+        <div>
+          <div class="row active">&gt; deploy <span class="kind">[workflow]</span></div>
+          <div class="row">  gs <span class="kind">[alias]</span></div>
+          <div class="row">  dc <span class="kind">[alias]</span></div>
+          <div class="row">  pnpm-build <span class="kind">[alias]</span></div>
+          <div class="row">  release <span class="kind">[workflow]</span></div>
+          <div class="row">  kctx <span class="kind">[alias]</span></div>
+          <div class="row">  clean-docker <span class="kind">[alias]</span></div>
+        </div>
+        <div class="panel">
+          <h2>deploy</h2>
+          <div><span class="label">Type:</span> <span class="value">workflow</span></div>
+          <br>
+          <div><span class="label">Tags:</span> <span class="tag">deploy ci project</span></div>
+          <br>
+          <div><span class="label">Steps:</span></div>
+          <div class="cmd">1. pnpm build</div>
+          <div class="cmd">2. go test ./...</div>
+          <div class="cmd">3. git push origin main</div>
+        </div>
+      </div>
+      <div class="footer">↑↓ navigate • enter run • / search • t tag • q quit</div>
+    </div>
+  </div>
+</body>
+</html>
